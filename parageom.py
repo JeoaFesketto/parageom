@@ -7,7 +7,7 @@ class RotorGeom:
     def __init__(self, file, init="unsectioned"):
 
         self.file_path = file
-        self.data = None
+        self.rotor_points = None
         self.parameters = None
         self.surfaces = None
         self.curves = None
@@ -21,7 +21,17 @@ class RotorGeom:
 
     def read_unsectioned_turbo(self, file_path=None):
 
-        """This functions reads a sectioned geomTurbo file and returns a numpy array."""
+        """
+        This functions reads a sectioned geomTurbo file and returns a numpy array.
+        
+        self.surfaces is a list of 4 np.arrays corresponding to the pressure and suction
+        sides of the rotor and the stator. 
+        For the np.arrays:  axis 0:     the various horizontal sections
+                            axis 1:     the cloud of points of the section
+                                        (only for one side)
+                            axis 2:     each point coordinate
+
+        """
 
         file = self.file_path if file_path == None else file_path
 
@@ -71,13 +81,23 @@ class RotorGeom:
 
         self.curves = curves
         self.surfaces = surfaces
-        print(np.array(surfaces).shape)
+        # TODO, make sure this works. Need to put self.rotor_points in the same format for
+        # the sectioned and unsectioned version of the function.
+        self.rotor_points = np.array([surfaces[0], surfaces[1]])
+
 
     def read_sectioned_turbo(self, file_path=None):
 
         """
         
         This functions reads a sectioned geomTurbo file and returns a numpy array.
+
+        The output self.rotor_points is structured as follows:
+
+        axis 0:     pressure and suction sides
+        axis 1:     the various horizontal sections
+        axis 2:     the cloud of points of the section
+        axis 3:     the coordinates of the points
         
         """
 
@@ -100,15 +120,15 @@ class RotorGeom:
             for j in range(len(content[i])):
                 content[i][j] = content[i][j].split(" ")
 
-        self.data = np.array(content, dtype="float")
+        self.rotor_points = np.array(content, dtype="float").reshape((2, 181, 181, 3))
 
-        return self.data
+        return self.rotor_points
 
     def parablade_2D_export(self, file):
         """Writes the pre-generated data to a txt file that can be read by parablade
         for parameterization."""
         # TODO exporter une des sections
-        if self.data == None:
+        if self.rotor_points == None:
             if self.file_path == None:
                 print(
                     "Please first specify a filepath for the points cloud to be imported."
@@ -116,10 +136,11 @@ class RotorGeom:
             else:
                 self.read_turbo()
 
-        points = self.data.reshape((2, 181, 181, 3))
         points = points.transpose((1, 0, 2, 3))
         points = points.reshape(181, 362, 3)[0]
         for i in range(3):
+            # TODO parameterize the magnitude of the coordinates, mms seem to work best with
+            # the code
             points.T[i] = (points.T[i] - np.min(points.T[i])) * 0.002
         with open(file, "w") as f:
             f.writelines(
@@ -145,5 +166,7 @@ class RotorGeom:
 
 
 if __name__ == "__main__":
-    o = RotorGeom('igg.geomTurbo')
-    print(o.rotor_edges)
+    # o = RotorGeom('igg.geomTurbo')
+    o = RotorGeom('fan.geomTurbo', init = 'sectioned')
+    print(o.data.shape)
+    # print(o.rotor_edges)
