@@ -83,7 +83,7 @@ class RotorGeom:
         self.surfaces = surfaces
         # TODO, make sure this works. Need to put self.rotor_points in the same format for
         # the sectioned and unsectioned version of the function.
-        self.rotor_points = np.array([surfaces[0], surfaces[1]])
+        self.rotor_points = [surfaces[0], surfaces[1]]
 
 
     def read_sectioned_turbo(self, file_path=None):
@@ -168,5 +168,5 @@ class RotorGeom:
 if __name__ == "__main__":
     # o = RotorGeom('igg.geomTurbo')
     o = RotorGeom('fan.geomTurbo', init = 'sectioned')
-    print(o.data.shape)
+    print(o.rotor_points[1][0])
     # print(o.rotor_edges)

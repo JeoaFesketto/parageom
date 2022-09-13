@@ -129,3 +129,4 @@ dmypy.json
 .pyre/
 q.py
 t.py
+confidential/
