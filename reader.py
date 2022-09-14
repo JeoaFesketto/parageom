@@ -1,9 +1,8 @@
 import numpy as np
-import matplotlib.pyplot as plt
-# from common import _getlines
+import parablade as pb
 
 
-class RotorGeom:
+class From_geomTurbo:
     def __init__(self, file, init="unsectioned"):
 
         self.file_path = file
@@ -23,9 +22,9 @@ class RotorGeom:
 
         """
         This functions reads a sectioned geomTurbo file and returns a numpy array.
-        
+
         self.surfaces is a list of 4 np.arrays corresponding to the pressure and suction
-        sides of the rotor and the stator. 
+        sides of the rotor and the stator.
         For the np.arrays:  axis 0:     the various horizontal sections
                             axis 1:     the cloud of points of the section
                                         (only for one side)
@@ -41,11 +40,11 @@ class RotorGeom:
                 for line in f.readlines()
             ]
 
-        geom = [data[i].split(' ') for i in range(896)]
+        geom = [data[i].split(" ") for i in range(896)]
         igg = data[897:]
 
-        self.rotor_edges = np.array([geom[99:280], geom[283:464]], dtype='float32')
-        self.stator_edges = np.array([geom[535:704], geom[707:876]], dtype='float32')
+        self.rotor_edges = np.array([geom[99:280], geom[283:464]], dtype="float32")
+        self.stator_edges = np.array([geom[535:704], geom[707:876]], dtype="float32")
         # TODO trouver un meilleur moyen de chopper les bons indexes
 
         surfaces_shapes = []
@@ -81,15 +80,13 @@ class RotorGeom:
 
         self.curves = curves
         self.surfaces = surfaces
-        # TODO, make sure this works. Need to put self.rotor_points in the same format for
-        # the sectioned and unsectioned version of the function.
-        self.rotor_points = [surfaces[0], surfaces[1]]
 
+        self.rotor_points = [surfaces[0], surfaces[1]]
 
     def read_sectioned_turbo(self, file_path=None):
 
         """
-        
+
         This functions reads a sectioned geomTurbo file and returns a numpy array.
 
         The output self.rotor_points is structured as follows:
@@ -98,7 +95,7 @@ class RotorGeom:
         axis 1:     the various horizontal sections
         axis 2:     the cloud of points of the section
         axis 3:     the coordinates of the points
-        
+
         """
 
         file = self.file_path if file_path == None else file_path
@@ -122,51 +119,46 @@ class RotorGeom:
 
         self.rotor_points = np.array(content, dtype="float").reshape((2, 181, 181, 3))
 
-        return self.rotor_points
 
-    def parablade_2D_export(self, file):
-        """Writes the pre-generated data to a txt file that can be read by parablade
-        for parameterization."""
-        # TODO exporter une des sections
-        if self.rotor_points == None:
-            if self.file_path == None:
-                print(
-                    "Please first specify a filepath for the points cloud to be imported."
-                )
-            else:
-                self.read_turbo()
+class From_param_2D:
+    def __init__(self, file, no_points=100):
 
-        points = points.transpose((1, 0, 2, 3))
-        points = points.reshape(181, 362, 3)[0]
-        for i in range(3):
-            # TODO parameterize the magnitude of the coordinates, mms seem to work best with
-            # the code
-            points.T[i] = (points.T[i] - np.min(points.T[i])) * 0.002
-        with open(file, "w") as f:
-            f.writelines(
-                [
-                    f"{i}\t{points.T[2, i]}\t{points.T[0, i]}\n"
-                    for i in range(len(points.T[0]))
-                ]
-            )
-        print(f"Done exporting to {file}")
+        """
+        Creates a new rotor from blade parameters. The file path specified should be to
+        a camber-thickness cfg file for parablade.
 
-    def plot_3D(self):
+        Parameters
+        ----------
+        file :          path to the camber thickness .cfg file with the desired blade parameters
+        no_points :     scalar of type int with the number of points wanted for each section
+                        to later become the dimension N_points in the Rotor object
 
-        ax = plt.axes(projection="3d")
-        ax.plot3D(self.data.T[0], self.data.T[2], self.data.T[1], "gray")
 
-        ax.set_xlim(-100, 30)
-        ax.set_zlim(0, 180)
-        ax.set_ylim(-250, 200)
-        ax.set_box_aspect(
-            [ub - lb for lb, ub in (getattr(ax, f"get_{a}lim")() for a in "xyz")]
-        )
-        plt.show()
+
+        """
+
+        blade = pb.Blade2DCamberThickness(file)
+        blade.get_section_coordinates(np.linspace(0.00, 1.00, no_points))
+
+        self.rotor_points = [
+            np.asarray(blade.pressure_coordinates, dtype="float32"),
+            np.asarray(blade.suction_coordinates, dtype="float32"),
+        ]
+        
+        z_coords = np.zeros((blade.section_coordinates.T.shape[0], 1))
+        self.section_coordinates = np.array([
+            np.hstack((blade.section_coordinates.T, z_coords))
+        ])
+
+        self.rotor_edges = None
+    
+class From_param_3D:
+    def __init__(self, file, UV = None):
+        blade = pb.Blade3D(file)
+        blade.make_blade()
+        plot = pb.BladePlot(blade)
+        plot.make_plots()
 
 
 if __name__ == "__main__":
-    # o = RotorGeom('igg.geomTurbo')
-    o = RotorGeom('fan.geomTurbo', init = 'sectioned')
-    print(o.rotor_points[1][0])
-    # print(o.rotor_edges)
+    o = From_param_3D('./example_files/moded_aachen.cfg')
