@@ -46,7 +46,7 @@ class Rotor:
             self.leading_edge = None
             self.trailing_edge = None
 
-        self.no_sections = self.suction_sections.shape[0]
+        self.N_sections = self.suction_sections.shape[0]
 
         try:
             self.section_coordinates = Initializer_object.section_coordinates
@@ -55,7 +55,7 @@ class Rotor:
             self.section_coordinates = np.array(
                 [
                     np.vstack((self.suction_sections[i], self.pressure_sections[i]))
-                    for i in range(self.no_sections)
+                    for i in range(self.N_sections)
                 ]
             )
 
