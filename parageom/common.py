@@ -1,3 +1,6 @@
+import matplotlib.pyplot as plt
+import numpy as np
+
 def _getlines(file, separator=' '):
     with open(file, "r") as f:
         data = [
@@ -9,3 +12,60 @@ def _getlines(file, separator=' '):
     for i in range(len(data)):
         data[i] = list(filter(None, data[i]))
     return data
+
+def point_cloud_plot(points):
+    """Plots a point cloud, the point list must be with shape (N_points, 3)
+    for 3D plot"""
+    ax = plt.axes(projection="3d")
+    ax.plot3D(points.T[0], points.T[2], points.T[1], "gray")
+
+    ax.set_xlim(-20, -16)
+    ax.set_zlim(70, 80)
+    ax.set_ylim(45, 55)
+    ax.set_box_aspect(
+        [ub - lb for lb, ub in (getattr(ax, f"get_{a}lim")() for a in "xyz")]
+    )
+
+    plt.show()
+
+def make_plot_matplotlib_2D(x, y):
+
+    """ Create 2D Matplotlib line plot """
+
+    # Get blade coordinates
+
+    # Plot the prescribed and the fitted blades
+    fig_2D = plt.figure(figsize=(8, 6))
+    ax_2D = fig_2D.add_subplot(111)
+    ax_2D.set_xlabel('$x$ axis', fontsize=12, color='k', labelpad=12)
+    ax_2D.set_ylabel('$y$ axis', fontsize=12, color='k', labelpad=12)
+    # ax_2D.xaxis.set_major_formatter(mpl.ticker.FormatStrFormatter('%.2f'))
+    # ax_2D.yaxis.set_major_formatter(mpl.ticker.FormatStrFormatter('%.2f'))
+    for t in ax_2D.xaxis.get_major_ticks(): t.label.set_fontsize(12)
+    for t in ax_2D.yaxis.get_major_ticks(): t.label.set_fontsize(12)
+
+    # Plot prescribed coordinates
+    points_2D, = ax_2D.plot(x, y)
+    points_2D.set_marker(" ")
+    points_2D.set_markersize(3.5)
+    points_2D.set_markeredgewidth(0.5)
+    points_2D.set_markeredgecolor("k")
+    points_2D.set_markerfacecolor("w")
+    points_2D.set_linestyle("-")
+    points_2D.set_color("k")
+    points_2D.set_linewidth(1.50)
+
+    # Set the aspect ratio of the data
+    ax_2D.set_aspect(1.0)
+
+    # Set axes aspect ratio
+    x_min, x_max = ax_2D.get_xlim()
+    y_min, y_max = ax_2D.get_ylim()
+    x_mid = (x_min + x_max) / 2
+    y_mid = (y_min + y_max) / 2
+    L = np.max((x_max - x_min, y_max - y_min)) / 2
+    ax_2D.set_xlim([x_mid - 1.25 * L, x_mid + 1.25 * L])
+    ax_2D.set_ylim([y_mid - 1.25 * L, y_mid + 1.25 * L])
+
+    # Adjust pad
+    plt.tight_layout(pad=5.0, w_pad=None, h_pad=None)
