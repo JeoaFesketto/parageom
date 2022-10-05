@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from reader import From_geomTurbo, From_param_2D, From_param_3D
+from parageom.reader import From_geomTurbo, From_param_2D, From_param_3D
 
 
 class Rotor:
@@ -60,14 +60,14 @@ class Rotor:
             )
 
     def parablade_section_export(
-        self, section_idx, file="./confidential/3Dblade.txt", dim="2D", normalize=True
+        self, section_idx, file=None, dim="2D", normalize=True, is_new=True
     ):
 
         """
         Writes the point cloud of a section to a txt file
         """
 
-        section = self.section_coordinates[section_idx]
+        section = self.section_coordinates[section_idx]/1000
 
         # WARNING normalization is in the wrong order here:
         # scaling is done after centering which might be problematic.
@@ -78,7 +78,11 @@ class Rotor:
                 section.T[i] = (section.T[i] - np.min(section.T[i])) * k
 
 
-        with open(file, "a") as f:
+        if file is None:
+            file = "./confidential/blade.txt" if dim == "2D" else "./confidential/3Dblade.txt"
+
+        mode = "w" if is_new else "a"
+        with open(file, mode) as f:
             if dim == "2D":
                 f.writelines(
                     [
@@ -89,12 +93,30 @@ class Rotor:
             elif dim == "3D":
                 f.writelines(
                     [
-                        f"{i}\t{section.T[2, i]}\t{section.T[0, i]}\t{section.T[1, i]}\n"
+                        f"{i}\t{section.T[1, i]}\t{section.T[0, i]}\t{section.T[2, i]}\n"
                         for i in range(len(section.T[0]))
                     ]
                 )
 
         print(f"Done exporting to {file}")
+    
+    def parablade_blade_export(
+        self, file = None, normalize = False, iterator = None
+    ):
+
+        """
+        Writes the point cloud of the 3D blade to a txt file
+        """
+
+        iterator = np.array(np.linspace(0, 180, 10), dtype = 'int') if iterator is None else iterator
+        
+        self.parablade_section_export(iterator[0], file = file, dim = "3D", normalize = normalize)
+
+        for i in iterator[1:]:
+            self.parablade_section_export(i, file = file, dim = "3D", normalize = normalize, is_new=False)
+    
+    def geomTurbo_export(self):
+        raise NotImplementedError('not yet implemented')
 
     def plot_section(self, section_idx):
 
@@ -114,7 +136,11 @@ class Rotor:
 
 
 if __name__ == "__main__":
-    o = Rotor(From_geomTurbo("./confidential/fan.geomTurbo", init="sectioned"))
+    o = Rotor(From_geomTurbo("./confidential/DGEN_geom/rotor_sections.geomTurbo", init="sectioned"))
+    o.parablade_blade_export(
+        file = '/home/daep/j.fesquet/git_repos/parablade/testing/for_pando/dual_section.txt',
+        iterator=[0, -1]
+    )
     # for i in np.array(np.linspace(0, 180, 10), dtype = 'int'):
-    #     o.parablade_section_export(i, dim = "3D", normalize=False)
-    o.parablade_section_export(0, file = 'dgen_base.txt', dim = '2D', normalize=False)
+        # o.parablade_section_export(i, dim = "3D", normalize=False)
+    # o.parablade_section_export(0, file = 'dgen_base.txt', dim = '2D', normalize=False)

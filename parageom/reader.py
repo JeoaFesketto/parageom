@@ -1,5 +1,6 @@
 import numpy as np
 import parablade as pb
+from geomdl import BSpline
 
 
 class From_geomTurbo:
@@ -126,7 +127,7 @@ class From_param_2D:
 
         """
 
-        Creates a new rotor from blade parameters. The file path specified should be to
+        Creates a tmp rotor from blade parameters. The file path specified should be to
         a camber-thickness cfg file for parablade.
 
         Parameters
@@ -153,7 +154,7 @@ class From_param_2D:
         self.rotor_edges = None
     
 class From_param_3D:
-    def __init__(self, file, N_sections = 181, N_points = 181, UV = None):
+    def __init__(self, file, N_sections = 181, N_points = 362, UV = None):
 
         """
         attributes:
@@ -170,7 +171,10 @@ class From_param_3D:
         u = np.linspace(0, 1, N_points)
         V = np.linspace(0, 1, N_sections)
 
+        self.N_blades = blade.IN["N_BLADES"]
 
+        self.N_sections = N_sections
+        self.N_points = N_points
         self.blade_coordinates = np.array(list(
             map(lambda v: blade.get_section_coordinates(u, v).T, V)
         ))
@@ -179,6 +183,144 @@ class From_param_3D:
             # for i in v:
             #     self.section_coordinates.append(blade.get_section_coordinates(u, i).T)
             # self.section_coordinates = np.array(self.section_coordinates)
+
+    def output_geomTurbo(self, filename = 'output.geomTurbo'):
+        """This function outputs a geomTurbo file of the blade ready to be read and used
+        in autogrid.
+        
+        N_sections: scalar, number of sections.
+        N_points: scalar, best if even, odd number of points not yet tested"""
+
+        shape = self.blade_coordinates.shape
+        if shape[1] % 2 == 0:
+            tmp = self.blade_coordinates
+            tmp = tmp.reshape((shape[0], 2, shape[1] // 2, 3))
+            tmp[:, 0, -1] = tmp[:, 1, 0]  # matching the trailing edge
+        else:
+            middle = int(shape[1] / 2 - 0.5)
+            tmp = np.insert(
+                self.blade_coordinates, middle, self.blade_coordinates[:, middle, :], axis=1
+            )
+            tmp = tmp.reshape((shape[0], 2, tmp.shape[1] // 2, 3))
+        tmp[:, 1] = np.flip(tmp[:, 1], axis=1)
+        tmp[..., [0, 1, 2]] = tmp[..., [1, 2, 0]]
+
+        self.blade_coordinates = self._TE_fillet(tmp)
+        
+        self.write_geomTurbo()
+
+    def _TE_fillet(self, point_cloud, N_te = 80, min_width = 0.5, min_angle = np.deg2rad(6)):
+        """
+        Sub-function that rounds the trailing edge based on a couple parameters.
+        The defaults seem to work quite well.
+
+        N_te is the number of newly generated points at the trailing edge.
+        min_width is the width of the blade under which the blade will be cut.
+        
+        With p1 the point along the section surface at which the blade is to be cut, the angle alpha 
+        corresponds to the angle between the tangent to the surface at p1 and the line between 
+        p1 and the trailing edge point.
+
+        min_angle is the threshold before which the trailing edge is moved in to shorten the blade
+        and reduce the angle.
+        min_angle should be input in radians.
+
+        """
+
+        def _dist(p1, p2):
+            return np.linalg.norm(p2-p1)
+        
+        def _angle(v1, v2):
+            return np.arccos(np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2)))
+
+        def _centre(p1, p2):
+            return p1 + (p2-p1)/2
+
+        def _get_intersect(p1, p2, v1, n):
+            n_hat = n / np.linalg.norm(n)
+            k = np.matmul(p1.T, n_hat)
+            t = (k-np.dot(p2, n_hat))/np.dot(v1, n_hat)
+            return list(p2+t*v1)
+
+        tmp = point_cloud
+        final_array = np.zeros((tmp.shape[0], 2, tmp.shape[2]+N_te, 3))
+
+        for k, section in enumerate(tmp):
+
+            i = 1
+            while _dist(*section[:, -i]) < min_width:
+                i += 1
+                elem = section[:, -i]
+
+            suction_curve = BSpline.Curve()
+            pressure_curve = BSpline.Curve()
+            suction_curve.degree = 2
+            pressure_curve.degree = 2
+
+            te = section[0, -1]
+            tangent_vectors = section[:, -i]-section[:, -i-1]
+            normal_vector = section[0, -i] - section[1, -i]
+            ce = section[1, -i]+1/2*normal_vector
+
+            if _angle(tangent_vectors[0], te-section[0, -i])<min_angle:
+                j = 1 
+                while _angle(tangent_vectors[0], _centre(*section[:, -j])-section[0, -i])<min_angle:
+                    j+= 1
+                te = _centre(*section[:, -j])
+
+            suction_ctrl = _get_intersect(te, section[0, -i], tangent_vectors[0], te-ce)
+            pressure_ctrl = _get_intersect(te, section[1, -i], tangent_vectors[1], te-ce)
+
+            suction_curve.ctrlpts = [
+                list(elem[0]),
+                suction_ctrl,
+                list(te)
+            ]
+            pressure_curve.ctrlpts = [
+                list(elem[1]),
+                pressure_ctrl,
+                list(te)
+            ]
+
+            suction_curve.knotvector = [0, 0, 0, 2, 2, 2]
+            pressure_curve.knotvector = [0, 0, 0, 2, 2, 2]
+            
+
+            suction_curve.delta = 1/(N_te+i)
+            pressure_curve.delta = 1/(N_te+i)
+
+            new_tail = np.array([suction_curve.evalpts, pressure_curve.evalpts])
+
+            final_array[k, :] = np.concatenate((tmp[k, :, :-i], new_tail), axis = 1)
+
+        self.N_points += 2*N_te
+        return final_array
+    
+    def write_geomTurbo(self, filename = 'output.geomTurbo'):
+        lines = [
+            'GEOMETRY TURBO VERSION 5',
+            f'number_of_blades {int(self.N_blades[0])}',
+            'blade_expansion_factor_hub  0.01',
+            'blade_expansion_factor_shroud 0.01',
+            'blade_tangential_definition	  0'
+        ]
+
+        for k, side in enumerate(['suction', 'pressure']):
+            lines.append(side)
+            lines.append('SECTIONAL')
+            lines.append(str(self.blade_coordinates.shape[0]))
+
+            for i, section in enumerate(self.blade_coordinates[:, k]):
+                lines.append(f'# section {i+1}')
+                lines.append('XYZ')
+                lines.append(str(self.blade_coordinates.shape[2]))
+
+                for point in np.asarray(np.asarray(section, dtype = 'float'), dtype = 'str'):
+                    lines.append(' '.join(point))
+
+        with open(filename, 'w') as f:
+            f.write('\n'.join(lines))
+
 
 
 
