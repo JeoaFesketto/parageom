@@ -4,7 +4,7 @@ from geomdl import BSpline
 
 
 class From_geomTurbo:
-    def __init__(self, file, init="unsectioned"):
+    def __init__(self, file, init="unsectioned", N_sections = 181, N_points = 181):
 
         self.file_path = file
         self.rotor_points = None
@@ -16,7 +16,7 @@ class From_geomTurbo:
         if init == "unsectioned":
             self.read_unsectioned_turbo(self.file_path)
         elif init == "sectioned":
-            self.read_sectioned_turbo(self.file_path)
+            self.read_sectioned_turbo(self.file_path, N_sections =  N_sections, N_points = N_points)
         else:
             raise NotImplementedError()
 
@@ -85,7 +85,7 @@ class From_geomTurbo:
 
         self.rotor_points = [surfaces[0], surfaces[1]]
 
-    def read_sectioned_turbo(self, file_path=None):
+    def read_sectioned_turbo(self, file_path=None, N_sections = None, N_points = None):
 
         """
 
@@ -103,10 +103,10 @@ class From_geomTurbo:
         file = self.file_path if file_path == None else file_path
 
         with open(file, "r") as f:
-            content = "".join(f.readlines()).replace("pressure\nSECTIONAL\n181\n", "")
+            content = "".join(f.readlines()).replace(f"pressure\nSECTIONAL\n{N_sections}\n", "")
 
-        content = content.split("suction\nSECTIONAL\n181\n")[1]
-        content = content.split("XYZ\n181\n")
+        content = content.split(f"suction\nSECTIONAL\n{N_sections}\n")[1]
+        content = content.split(f"XYZ\n{N_sections}\n")
         for i, contour in enumerate(content):
             content[i] = contour.split("\n")
         content = content[1:]
@@ -119,7 +119,7 @@ class From_geomTurbo:
             for j in range(len(content[i])):
                 content[i][j] = content[i][j].split(" ")
 
-        self.rotor_points = np.array(content, dtype="float").reshape((2, 181, 181, 3))
+        self.rotor_points = np.array(content, dtype="float").reshape((2, N_sections, N_points, 3))
 
 
 class From_param_2D:
