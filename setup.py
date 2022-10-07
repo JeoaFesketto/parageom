@@ -7,5 +7,5 @@ setup(
    author='Jean Fesquet',
    author_email='',
    packages=['parageom'],
-   install_requires=['numpy','matplotlib','parablade'],
+   install_requires=['numpy','matplotlib','parablade', 'geomdl'],
 )
