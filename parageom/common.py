@@ -69,3 +69,10 @@ def make_plot_matplotlib_2D(x, y):
 
     # Adjust pad
     plt.tight_layout(pad=5.0, w_pad=None, h_pad=None)
+
+
+def print_parageom():
+    print('\n\n\n')
+    print('    PARAGEOM    ')
+    print('    PARABLADE    ')
+    print('\n\n\n')
