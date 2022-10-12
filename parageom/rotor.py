@@ -67,16 +67,13 @@ class Rotor:
         Writes the point cloud of a section to a txt file
         """
 
-        section = self.section_coordinates[section_idx]/1000
 
         # WARNING normalization is in the wrong order here:
         # scaling is done after centering which might be problematic.
         if normalize:
-            k = 1 / np.max(section)
-
-            for i in range(3):
-                section.T[i] = (section.T[i] - np.min(section.T[i])) * k
-
+            section = self.section_coordinates[section_idx]/1000
+        else:
+            section = self.section_coordinates[section_idx]
 
         if file is None:
             file = "./confidential/blade.txt" if dim == "2D" else "./confidential/3Dblade.txt"
@@ -93,7 +90,7 @@ class Rotor:
             elif dim == "3D":
                 f.writelines(
                     [
-                        f"{i}\t{section.T[1, i]}\t{section.T[0, i]}\t{section.T[2, i]}\n"
+                        f"{i}\t{section.T[2, i]}\t{section.T[0, i]}\t{section.T[1, i]}\n"
                         for i in range(len(section.T[0]))
                     ]
                 )
@@ -114,9 +111,8 @@ class Rotor:
 
         for i in iterator[1:]:
             self.parablade_section_export(i, file = file, dim = "3D", normalize = normalize, is_new=False)
-    
-    def geomTurbo_export(self):
-        raise NotImplementedError('not yet implemented')
+
+
 
     def plot_section(self, section_idx):
 
