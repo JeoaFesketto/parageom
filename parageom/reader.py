@@ -324,11 +324,3 @@ class From_param_3D:
         with open(filename, 'w') as f:
             f.write('\n'.join(lines))
 
-
-
-
-
-if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-    o = From_param_3D('/home/daep/j.fesquet/my_coding/example_files/moded_aachen.cfg')
-    o.output_geomTurbo()
