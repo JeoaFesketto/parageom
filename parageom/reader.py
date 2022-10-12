@@ -85,7 +85,7 @@ class From_geomTurbo:
 
         self.rotor_points = [surfaces[0], surfaces[1]]
 
-    def read_sectioned_turbo(self, file_path=None, N_sections = None, N_points = None):
+    def read_sectioned_turbo(self, file_path=None, N_sections = 181, N_points = 181):
 
         """
 
@@ -99,7 +99,7 @@ class From_geomTurbo:
         axis 3:     the coordinates of the points
 
         """
-
+        # TODO make it auto to get the number of sections and the number of points
         file = self.file_path if file_path == None else file_path
 
         with open(file, "r") as f:
@@ -184,7 +184,7 @@ class From_param_3D:
             #     self.section_coordinates.append(blade.get_section_coordinates(u, i).T)
             # self.section_coordinates = np.array(self.section_coordinates)
 
-    def output_geomTurbo(self, filename = 'output.geomTurbo'):
+    def output_geomTurbo(self, filename = 'output.geomTurbo', LE_fillet=False, TE_fillet=True):
         """This function outputs a geomTurbo file of the blade ready to be read and used
         in autogrid.
         
@@ -205,9 +205,12 @@ class From_param_3D:
         tmp[:, 1] = np.flip(tmp[:, 1], axis=1)
         tmp[..., [0, 1, 2]] = tmp[..., [1, 2, 0]]
 
-        self.blade_coordinates = self._TE_fillet(tmp)
+        if TE_fillet:
+            self.blade_coordinates = self._TE_fillet(tmp)
+        if LE_fillet:
+            raise NotImplementedError('Yet to be implemented')
         
-        self.write_geomTurbo()
+        self.write_geomTurbo(filename)
 
     def _TE_fillet(self, point_cloud, N_te = 80, min_width = 0.5, min_angle = np.deg2rad(6)):
         """
@@ -327,13 +330,5 @@ class From_param_3D:
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
-    o = From_param_3D('./example_files/moded_aachen.cfg')
-    # o = From_geomTurbo('./confidential/fan.geomTurbo', init = 'sectioned')
-    # section =  o.blade_coordinates[2]
-    # ax = plt.axes(projection="3d")
-    # ax.plot3D(section[0], section[2], section[1], "gray")
-    # ax.set_box_aspect(
-    #     [ub - lb for lb, ub in (getattr(ax, f"get_{a}lim")() for a in "xyz")]
-    # )
-
-    # plt.show()
+    o = From_param_3D('/home/daep/j.fesquet/my_coding/example_files/moded_aachen.cfg')
+    o.output_geomTurbo()
