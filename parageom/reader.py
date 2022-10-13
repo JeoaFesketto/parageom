@@ -1,3 +1,4 @@
+from warnings import warn
 import numpy as np
 import parablade as pb
 from geomdl import BSpline
@@ -163,6 +164,9 @@ class From_param_3D:
             with on axis 0: all the sections
                     axis 1: all the points
                     axis 2: the coordinates
+            
+            split_coordinates: ndarray of shape(2, N_sections, N_points, N_dim)
+            with the suction and pressure side respectively on axis 0.
         """
 
         blade = pb.Blade3D(file, UV = UV)
@@ -183,10 +187,12 @@ class From_param_3D:
             # for i in v:
             #     self.section_coordinates.append(blade.get_section_coordinates(u, i).T)
             # self.section_coordinates = np.array(self.section_coordinates)
+        self.split_coordinates = None
 
     def output_geomTurbo(self, filename = 'output.geomTurbo', LE_fillet=False, TE_fillet=True):
         """This function outputs a geomTurbo file of the blade ready to be read and used
         in autogrid.
+
         
         N_sections: scalar, number of sections.
         N_points: scalar, best if even, odd number of points not yet tested"""
@@ -197,6 +203,7 @@ class From_param_3D:
             tmp = tmp.reshape((shape[0], 2, shape[1] // 2, 3))
             tmp[:, 0, -1] = tmp[:, 1, 0]  # matching the trailing edge
         else:
+            warn('Odd number of points not yet tested. If problems occur, it might be due to this.')
             middle = int(shape[1] / 2 - 0.5)
             tmp = np.insert(
                 self.blade_coordinates, middle, self.blade_coordinates[:, middle, :], axis=1
@@ -205,8 +212,10 @@ class From_param_3D:
         tmp[:, 1] = np.flip(tmp[:, 1], axis=1)
         tmp[..., [0, 1, 2]] = tmp[..., [1, 2, 0]]
 
+        self.split_coordinates = tmp
+
         if TE_fillet:
-            self.blade_coordinates = self._TE_fillet(tmp)
+            self.split_coordinates = self._TE_fillet(self.split_coordinates)
         if LE_fillet:
             raise NotImplementedError('Yet to be implemented')
         
@@ -311,12 +320,12 @@ class From_param_3D:
         for k, side in enumerate(['suction', 'pressure']):
             lines.append(side)
             lines.append('SECTIONAL')
-            lines.append(str(self.blade_coordinates.shape[0]))
+            lines.append(str(self.split_coordinates.shape[0]))
 
-            for i, section in enumerate(self.blade_coordinates[:, k]):
+            for i, section in enumerate(self.split_coordinates[:, k]):
                 lines.append(f'# section {i+1}')
                 lines.append('XYZ')
-                lines.append(str(self.blade_coordinates.shape[2]))
+                lines.append(str(self.split_coordinates.shape[2]))
 
                 for point in np.asarray(np.asarray(section, dtype = 'float'), dtype = 'str'):
                     lines.append(' '.join(point))
