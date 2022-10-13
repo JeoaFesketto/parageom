@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import argparse
+import time
 
 from parageom.reader import From_param_3D
 from parageom.common import print_parageom
@@ -28,21 +29,23 @@ parser.add_argument(
 parser.add_argument(
     "-LE",
     "--LE_fillet",
-    help="Bool to fillet or not the leading edge",
-    default=False,
-    type=bool,
+    help="Flag to fillet or not the leading edge",
+    action='count',
+    default=0,
 )
 parser.add_argument(
     "-TE",
     "--TE_fillet",
-    help="Bool to fillet or not the trailing edge",
-    default=False,
-    type=bool,
+    help="Flag to fillet or not the trailing edge",
+    action='count',
+    default=0,
 )
 
 
 args = parser.parse_args()
 DIR = os.getcwd() + "/"
+
+t = time.time()
 
 # SCRIPT STARTS HERE:
 
@@ -58,6 +61,9 @@ except:
 blade = From_param_3D(DIR+args.config_file)
 blade.output_geomTurbo(
     DIR+args.output_folder+args.config_file.split('/')[-1][:-3]+'geomTurbo',
-    args.LE_fillet,
-    args.TE_fillet
+    bool(args.LE_fillet),
+    bool(args.TE_fillet)
 )
+
+
+print('This was generated in %(my_time).5f seconds\n' % {'my_time': time.time() - t})
