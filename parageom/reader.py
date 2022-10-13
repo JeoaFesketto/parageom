@@ -5,7 +5,7 @@ from geomdl import BSpline
 
 
 class From_geomTurbo:
-    def __init__(self, file, init="unsectioned", N_sections=181, N_points=181):
+    def __init__(self, file, init="unsectioned"):
 
         self.file_path = file
         self.rotor_points = None
@@ -17,9 +17,7 @@ class From_geomTurbo:
         if init == "unsectioned":
             self.read_unsectioned_turbo(self.file_path)
         elif init == "sectioned":
-            self.read_sectioned_turbo(
-                self.file_path, N_sections=N_sections, N_points=N_points
-            )
+            self.read_sectioned_turbo(self.file_path)
         else:
             raise NotImplementedError()
 
@@ -88,7 +86,7 @@ class From_geomTurbo:
 
         self.rotor_points = [surfaces[0], surfaces[1]]
 
-    def read_sectioned_turbo(self, file_path=None, N_sections=181, N_points=181):
+    def read_sectioned_turbo(self, file_path=None):
 
         """
 
@@ -106,12 +104,17 @@ class From_geomTurbo:
         file = self.file_path if file_path == None else file_path
 
         with open(file, "r") as f:
-            content = "".join(f.readlines()).replace(
-                f"pressure\nSECTIONAL\n{N_sections}\n", ""
-            )
+            raw_content = f.readlines()
+        
+        N_sections = int(''.join(raw_content).split('\n')[7])
+        N_points = int(''.join(raw_content).split('\n')[10])
+
+        content = "".join(raw_content).replace(
+            f"pressure\nSECTIONAL\n{N_sections}\n", ""
+        )
 
         content = content.split(f"suction\nSECTIONAL\n{N_sections}\n")[1]
-        content = content.split(f"XYZ\n{N_sections}\n")
+        content = content.split(f"XYZ\n{N_points}\n")
         for i, contour in enumerate(content):
             content[i] = contour.split("\n")
         content = content[1:]
@@ -194,6 +197,7 @@ class From_param_3D:
         # for i in v:
         #     self.section_coordinates.append(blade.get_section_coordinates(u, i).T)
         # self.section_coordinates = np.array(self.section_coordinates)
+
         self.split_coordinates = None
 
     def output_geomTurbo(
@@ -235,7 +239,7 @@ class From_param_3D:
 
         self.write_geomTurbo(filename)
 
-    def _LE_fillet(self, point_cloud, N_le=80, min_width=0.5, min_angle=np.deg2rad(6)):
+    def _LE_fillet(self, point_cloud, N_le=80, min_width=0.5, min_angle=np.deg2rad(4)):
         """
         Sub-function that rounds the leading edge based on a couple parameters.
         The defaults seem to work quite well.
@@ -315,9 +319,11 @@ class From_param_3D:
             suction_curve.delta = 1 / (N_le + i)
             pressure_curve.delta = 1 / (N_le + i)
 
-            new_head = np.array([suction_curve.evalpts, pressure_curve.evalpts])
+
+            new_head = np.array([np.flip(suction_curve.evalpts, axis = 0), np.flip(pressure_curve.evalpts, axis = 0)])
 
             final_array[k, :] = np.concatenate((new_head, tmp[k, :, i:]), axis=1)
+
 
         self.N_points += 2 * N_le
         return final_array
