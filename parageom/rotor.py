@@ -58,9 +58,11 @@ class Rotor:
                     for i in range(self.N_sections)
                 ]
             )
+        
+        self.scale_factor = 1
 
     def parablade_section_export(
-        self, section_idx, file=None, dim="2D", normalize=True, is_new=True
+        self, section_idx, file=None, dim="2D", scale_factor=1, is_new=True
     ):
 
         """
@@ -68,12 +70,9 @@ class Rotor:
         """
 
 
-        # WARNING normalization is in the wrong order here:
-        # scaling is done after centering which might be problematic.
-        if normalize:
-            section = self.section_coordinates[section_idx]/1000
-        else:
-            section = self.section_coordinates[section_idx]
+        if scale_factor != 1:
+            self.scale_factor = scale_factor
+            section = self.section_coordinates[section_idx]*scale_factor
 
         if file is None:
             file = "./confidential/blade.txt" if dim == "2D" else "./confidential/3Dblade.txt"
