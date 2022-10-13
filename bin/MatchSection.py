@@ -5,7 +5,8 @@ import argparse
 from parablade.blade_match import BladeMatch
 from parablade.common.config import ReadUserInput, WriteBladeConfigFile
 
-from parageom.bin_functions import make_section
+from parageom.reader import From_geomTurbo
+from parageom.rotor import Rotor
 from parageom.common import print_parageom
 
 
@@ -39,7 +40,6 @@ parser.add_argument(
     type=int,
 )
 
-
 args = parser.parse_args()
 DIR = os.getcwd() + "/"
 
@@ -53,10 +53,12 @@ try:
 except:
     print("Writing to existing folder, files might have been overwriten.")
 
-make_section(
-    args.geomTurbo_file,
-    DIR + args.output_folder + f'{args.config_file.split("/")[-1][:-3]}txt',
+rotor = Rotor(From_geomTurbo(args.geomTurbo_file, init="sectioned"))
+rotor.parablade_section_export(
     args.section_index,
+    file=DIR + args.output_folder + f'{args.config_file.split("/")[-1][:-3]}txt',
+    scale_factor=1e-3,
+    dim="3D",
 )
 
 IN = ReadUserInput(DIR + args.config_file)
@@ -65,6 +67,7 @@ IN["Config_Path"] = DIR + args.output_folder + args.config_file.split("/")[-1]
 IN["PRESCRIBED_BLADE_FILENAME"] = (
     DIR + args.output_folder + f'{args.config_file.split("/")[-1][:-3]}txt'
 )
+IN["SCALE_FACTOR"] = rotor.scale_factor
 
 WriteBladeConfigFile(open(IN["Config_Path"], "w"), IN)
 
