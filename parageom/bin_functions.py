@@ -27,4 +27,4 @@ def make_section(INFile, OUTFile = './tmp.txt', section = 0):
     """
 
     rotor = Rotor(From_geomTurbo(INFile, init="sectioned"))
-    rotor.parablade_section_export(section, file = OUTFile, normalize = True, dim='3D')
+    rotor.parablade_section_export(section, file = OUTFile, scale_factor = 1e-3, dim='3D')
