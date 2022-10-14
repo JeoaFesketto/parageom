@@ -115,14 +115,9 @@ def show_section(*geomTurbo_files, section = 0, _3Dimensional = False):
             le = points[0]
             te = rotor.suction_sections[section, -1]
 
-
-    # NOTE CHANGE THIS BACK
-    ax.set_xlim(le[0]-0.3, le[0]+0.3)
-    ax.set_zlim(le[1]-0.3, le[1]+0.3)
-    ax.set_ylim(le[2]-0.3, le[2]+0.3)
-    # ax.set_xlim(le[0]-le[1]/2, te[0]+le[1]/2)
-    # ax.set_zlim(le[1]-0.3, te[1]+0.3)
-    # ax.set_ylim(le[2]-0.3, te[2]+0.3)
+    ax.set_xlim(le[0]-le[1]/2, te[0]+le[1]/2)
+    ax.set_zlim(le[1]-0.3, te[1]+0.3)
+    ax.set_ylim(le[2]-0.3, te[2]+0.3)
     ax.set_box_aspect(
         [ub - lb for lb, ub in (getattr(ax, f"get_{a}lim")() for a in "xyz")]
     )
