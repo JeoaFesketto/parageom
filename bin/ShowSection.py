@@ -33,7 +33,7 @@ parser.add_argument(
 parser.add_argument(
     "-3D",
     "--_3Dimensional",
-    help="use this flag to plot in 3 dimensions",
+    help="use this flag to plot in 3 dimensions [NOT YET IMPLEMENTED]",
     action='count',
     default=0
 )
