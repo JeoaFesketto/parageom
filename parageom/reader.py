@@ -257,9 +257,11 @@ class From_param_3D:
         min_angle should be input in radians.
 
         """
+        # NOTE there is a slight problem with the number of points.
+        # the array is expanded by N_le-1 points actually...
 
         tmp = point_cloud
-        final_array = np.zeros((tmp.shape[0], 2, tmp.shape[2] + N_le, 3))
+        final_array = np.zeros((tmp.shape[0], 2, tmp.shape[2] + N_le-1, 3))
 
         for k, section in enumerate(tmp):
 
@@ -308,10 +310,10 @@ class From_param_3D:
 
             new_head = np.array([np.flip(suction_curve.evalpts, axis = 0), np.flip(pressure_curve.evalpts, axis = 0)])
 
-            final_array[k, :] = np.concatenate((new_head, tmp[k, :, i:]), axis=1)
+            final_array[k, :] = np.concatenate((new_head, tmp[k, :, i+1:]), axis=1)
+            
 
-
-        self.N_points += 2 * N_le
+        self.N_points += 2 * (N_le-1)
         return final_array
 
     def _TE_fillet(self, point_cloud, N_te=80, min_width=0.5, min_angle=np.deg2rad(6)):
