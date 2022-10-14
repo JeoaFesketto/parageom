@@ -13,20 +13,23 @@ def _getlines(file, separator=' '):
         data[i] = list(filter(None, data[i]))
     return data
 
-def point_cloud_plot(points):
+def point_cloud_plot(points, centre = None, ax = None, c = 'grey'):
     """Plots a point cloud, the point list must be with shape (N_points, 3)
     for 3D plot"""
-    ax = plt.axes(projection="3d")
-    ax.plot3D(points.T[0], points.T[2], points.T[1], "gray")
+    ax = plt.axes(projection="3d") if ax is None else ax
+    ax.plot3D(points.T[0], points.T[2], points.T[1], c)
 
-    ax.set_xlim(-20, -16)
-    ax.set_zlim(70, 80)
-    ax.set_ylim(45, 55)
+    centre = points[0] if centre is None else centre
+    ax.set_xlim(centre[0]-1, centre[0]+1)
+    ax.set_zlim(centre[1]-1, centre[1]+1)
+    ax.set_ylim(centre[2]-1, centre[2]+1)
     ax.set_box_aspect(
         [ub - lb for lb, ub in (getattr(ax, f"get_{a}lim")() for a in "xyz")]
     )
 
-    plt.show()
+    if ax is None:
+        plt.show()
+
 
 def plot_vector(origin, vector, plot_object = None, c = None):
     """Plots a vector from a point given."""
