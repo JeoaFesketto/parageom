@@ -239,7 +239,7 @@ class From_param_3D:
 
         self.write_geomTurbo(filename)
 
-    def _LE_fillet(self, point_cloud, N_le=80, min_width=0.5, min_angle=np.deg2rad(4)):
+    def _LE_fillet(self, point_cloud, N_le=80, min_width=0.5, min_angle=np.deg2rad(24)):
         """
         Sub-function that rounds the leading edge based on a couple parameters.
         The defaults seem to work quite well.
@@ -301,7 +301,7 @@ class From_param_3D:
                     < min_angle
                 ):
                     j += 1
-                te = _centre(*section[:, j])
+                le = _centre(*section[:, j])
 
             suction_ctrl = _get_intersect(
                 le, section[0, i], tangent_vectors[0], le - ce
