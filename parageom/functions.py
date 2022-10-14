@@ -92,13 +92,22 @@ def match_section(
 
     WriteBladeConfigFile(open(IN["Config_Path"], "w"), IN)
 
-    options = {
-        "view_xy": "yes",  # 2D Recommended
-        "view_xR": "yes",  # 3D Recommended
-        "view_yz": "no",  # 3D Optional
-        "view_3D": "yes",  # 3D Recommended
-        "error_distribution": "yes",
-    }
+    if not sys._getframe().f_back.f_code.co_name == 'match_blade':
+        options = {
+            "view_xy": "yes",  # 2D Recommended
+            "view_xR": "yes",  # 3D Recommended
+            "view_yz": "no",  # 3D Optional
+            "view_3D": "yes",  # 3D Recommended
+            "error_distribution": "yes",
+        }
+    else:
+        options = {
+            "view_xy": "no",  # 2D Recommended
+            "view_xR": "no",  # 3D Recommended
+            "view_yz": "no",  # 3D Optional
+            "view_3D": "no",  # 3D Recommended
+            "error_distribution": "no",
+        }
 
     matched_blade_object = BladeMatch(
         IN, coarseness=1, plot_options=options, _output_path=DIR + output_folder[:-1]
