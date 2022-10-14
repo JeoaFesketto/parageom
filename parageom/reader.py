@@ -4,6 +4,7 @@ import parablade as pb
 from geomdl import BSpline
 
 
+
 class From_geomTurbo:
     def __init__(self, file, init="unsectioned"):
 
@@ -239,7 +240,7 @@ class From_param_3D:
 
         self.write_geomTurbo(filename)
 
-    def _LE_fillet(self, point_cloud, N_le=80, min_width=0.5, min_angle=np.deg2rad(24)):
+    def _LE_fillet(self, point_cloud, N_le=80, min_width=0.8, min_angle=np.deg2rad(15)):
         """
         Sub-function that rounds the leading edge based on a couple parameters.
         The defaults seem to work quite well.
@@ -256,21 +257,6 @@ class From_param_3D:
         min_angle should be input in radians.
 
         """
-
-        def _dist(p1, p2):
-            return np.linalg.norm(p2 - p1)
-
-        def _angle(v1, v2):
-            return np.arccos(np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2)))
-
-        def _centre(p1, p2):
-            return p1 + (p2 - p1) / 2
-
-        def _get_intersect(p1, p2, v1, n):
-            n_hat = n / np.linalg.norm(n)
-            k = np.matmul(p1.T, n_hat)
-            t = (k - np.dot(p2, n_hat)) / np.dot(v1, n_hat)
-            return list(p2 + t * v1)
 
         tmp = point_cloud
         final_array = np.zeros((tmp.shape[0], 2, tmp.shape[2] + N_le, 3))
@@ -292,12 +278,12 @@ class From_param_3D:
             normal_vector = section[0, i] - section[1, i]
             ce = section[1, i] + 1 / 2 * normal_vector
 
-            if _angle(tangent_vectors[0], le - section[0, i]) < min_angle:
+            if np.min(_angle(tangent_vectors, le - section[:, i])) < min_angle:
                 j = 1
                 while (
-                    _angle(
-                        tangent_vectors[0], _centre(*section[:, j]) - section[0, i]
-                    )
+                    np.min(_angle(
+                        tangent_vectors, _centre(*section[:, j]) - section[:, i]
+                    ))
                     < min_angle
                 ):
                     j += 1
@@ -346,21 +332,6 @@ class From_param_3D:
 
         """
 
-        def _dist(p1, p2):
-            return np.linalg.norm(p2 - p1)
-
-        def _angle(v1, v2):
-            return np.arccos(np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2)))
-
-        def _centre(p1, p2):
-            return p1 + (p2 - p1) / 2
-
-        def _get_intersect(p1, p2, v1, n):
-            n_hat = n / np.linalg.norm(n)
-            k = np.matmul(p1.T, n_hat)
-            t = (k - np.dot(p2, n_hat)) / np.dot(v1, n_hat)
-            return list(p2 + t * v1)
-
         tmp = point_cloud
         final_array = np.zeros((tmp.shape[0], 2, tmp.shape[2] + N_te, 3))
 
@@ -381,12 +352,12 @@ class From_param_3D:
             normal_vector = section[0, -i] - section[1, -i]
             ce = section[1, -i] + 1 / 2 * normal_vector
 
-            if _angle(tangent_vectors[0], te - section[0, -i]) < min_angle:
+            if np.min(_angle(tangent_vectors, te - section[:, -i])) < min_angle:
                 j = 1
                 while (
-                    _angle(
-                        tangent_vectors[0], _centre(*section[:, -j]) - section[0, -i]
-                    )
+                    np.min(_angle(
+                        tangent_vectors, _centre(*section[:, -j]) - section[:, -i]
+                    ))
                     < min_angle
                 ):
                     j += 1
@@ -442,3 +413,27 @@ class From_param_3D:
         with open(filename, "w") as f:
             f.write("\n".join(lines))
             f.write("\n") # don't remove it
+
+# Functions used in _LE_fillet and _TE_fillet.
+
+def _dist(p1, p2):
+    return np.linalg.norm(p2 - p1)
+
+def _angle(v1, v2):
+    """
+    Gets the angle between vector elements of two similar sized arrays.
+    Returns:
+        numpy.ndarray of shape N_vectors
+    """
+    return np.arccos(np.diag(
+                np.tensordot(v1, v2, axes = [1, 1])) / (np.linalg.norm(v1, axis = 1) * np.linalg.norm(v2, axis = 1)
+            ))
+
+def _centre(p1, p2):
+    return p1 + (p2 - p1) / 2
+
+def _get_intersect(p1, p2, v1, n):
+    n_hat = n / np.linalg.norm(n)
+    k = np.matmul(p1.T, n_hat)
+    t = (k - np.dot(p2, n_hat)) / np.dot(v1, n_hat)
+    return list(p2 + t * v1)
