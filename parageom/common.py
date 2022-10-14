@@ -28,6 +28,17 @@ def point_cloud_plot(points):
 
     plt.show()
 
+def plot_vector(origin, vector, plot_object = None, c = None):
+    """Plots a vector from a point given."""
+    to_plot = np.vstack((origin, origin+vector))
+    if c is None:
+        c = ['red', 'orange']
+    if plot_object is not None:
+        plot_object.scatter(*origin[[0, 2, 1]], c = c[0])
+        plot_object.plot3D(*to_plot.T[[0, 2, 1]], c[1])
+    else:
+        raise NotImplementedError('Not implemented')
+
 def make_plot_matplotlib_2D(x, y):
 
     """ Create 2D Matplotlib line plot """
