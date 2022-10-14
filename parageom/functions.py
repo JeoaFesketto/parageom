@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 
 import matplotlib.pyplot as plt
@@ -9,9 +10,55 @@ from parablade.common.config import ReadUserInput, WriteBladeConfigFile
 
 from parageom.reader import From_param_3D, From_geomTurbo
 from parageom.rotor import Rotor
-
+import shutil as sh
 
 # This file has a functional version of all the scripts available in bin/
+
+def match_blade(
+    geomTurbo_file, init_config_file, output_folder="blade_match_output/", N_sections=30
+):
+
+    DIR = os.getcwd() + "/"
+
+    if not output_folder.endswith("/"):
+        output_folder += "/"
+
+    try:
+        os.mkdir(DIR + output_folder)
+    except:
+        print("Writing to existing folder, files might get overwriten")
+        if input('\n\n\tProceed? y/n:\t\t') == 'n':
+            raise Exception('writing to existing folder')
+        os.system(f"rm -rf {DIR+output_folder}output_matching/")
+
+    N_sections_geomTurbo = From_geomTurbo(geomTurbo_file, 'sectioned').rotor_points.shape[1]
+
+    # change this to be able to linearly space the sections geometrically.
+    sections = np.array(np.linspace(0, N_sections_geomTurbo-1, N_sections), dtype=int)
+    
+    sh.copy(
+        init_config_file,
+        f'{DIR+output_folder}section_-1.cfg'
+    )
+
+    for i, section_index in enumerate(sections):
+        match_section(
+            geomTurbo_file,
+            f'{output_folder}section_{i-1}.cfg',
+            output_folder=output_folder,
+            section_index=section_index
+        )
+        sh.copy(
+            f'{DIR+output_folder}output_matching/matched_parametrization.cfg',
+            f'{DIR+output_folder}section_{i}.cfg'
+        )
+        sh.copy(
+            f'{DIR+output_folder}output_matching/optimization_progress.txt',
+            f'{DIR+output_folder}section_{i}_iterations.txt'
+        )
+        os.system(f"rm -rf {DIR+output_folder}output_matching/")
+
+
 
 
 def match_section(
@@ -57,7 +104,9 @@ def match_section(
         IN, coarseness=1, plot_options=options, _output_path=DIR + output_folder[:-1]
     )
 
-    matched_blade_object.match_blade(matching_mode="manual")
+    if not sys._getframe().f_back.f_code.co_name == 'match_blade':
+        matched_blade_object.match_blade(matching_mode="manual")
+
     matched_blade_object.match_blade(matching_mode="DVs")
 
 
