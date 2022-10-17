@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 import os
 import argparse
+import sys
 
 from parablade.blade_match import BladeMatch
-from parablade.common.config import ReadUserInput, WriteBladeConfigFile
+from parablade.common.config import ReadUserInput, WriteBladeConfigFile, Scale
 
 from parageom.reader import From_geomTurbo
 from parageom.rotor import Rotor
@@ -67,7 +68,7 @@ IN["Config_Path"] = DIR + args.output_folder + args.config_file.split("/")[-1]
 IN["PRESCRIBED_BLADE_FILENAME"] = (
     DIR + args.output_folder + f'{args.config_file.split("/")[-1][:-3]}txt'
 )
-IN["SCALE_FACTOR"] = rotor.scale_factor
+IN = Scale(IN, scale=rotor.scale_factor, in_place=True)
 
 WriteBladeConfigFile(open(IN["Config_Path"], "w"), IN)
 
