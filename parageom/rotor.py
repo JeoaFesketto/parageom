@@ -69,10 +69,8 @@ class Rotor:
         Writes the point cloud of a section to a txt file
         """
 
-
-        if scale_factor != 1:
-            self.scale_factor = scale_factor
-            section = self.section_coordinates[section_idx]*scale_factor
+        self.scale_factor = scale_factor
+        section = self.section_coordinates[section_idx]*scale_factor
 
         if file is None:
             file = "./confidential/blade.txt" if dim == "2D" else "./confidential/3Dblade.txt"
