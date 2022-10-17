@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from parablade.blade_match import BladeMatch
-from parablade.common.config import ReadUserInput, WriteBladeConfigFile, Scale
+from parablade.common.config import ReadUserInput, WriteBladeConfigFile, ConfigPasser, Scale, DeScale
 
 from parageom.reader import From_param_3D, From_geomTurbo
 from parageom.rotor import Rotor
@@ -32,29 +32,37 @@ def match_blade(
             raise Exception("writing to existing folder")
         os.system(f"rm -rf {DIR+output_folder}output_matching/")
 
-    N_sections_geomTurbo = From_geomTurbo(
-        geomTurbo_file, "sectioned"
-    ).rotor_points.shape[1]
+    geomTurbo = From_geomTurbo(geomTurbo_file, "sectioned")
+    le_points = geomTurbo.rotor_points[0, :, 0]
+
+    def _le_lin_sampler(le_points, d_min):
+        indeces = [0]
+        limit = (d_min*0.01)*np.linalg.norm(le_points[-1]-le_points[0])
+        for i in range(1, le_points.shape[0]):
+            if np.linalg.norm(le_points[i]-le_points[i-1]) > limit:
+                indeces.append(i)
+        return np.array(indeces)
+
 
     # change this to be able to linearly space the sections geometrically.
-    sections = np.array(np.linspace(0, N_sections_geomTurbo - 1, N_sections), dtype=int)
+    sections = _le_lin_sampler(le_points, 100/N_sections)
 
     sh.copy(init_config_file, f"{DIR+output_folder}section_-1.cfg")
 
     for i, section_index in enumerate(sections):
         match_section(
             geomTurbo_file,
-            f"{output_folder}section_{i-1}.cfg",
+            f"{output_folder}section_{i-1:03d}.cfg",
             output_folder=output_folder,
             section_index=section_index,
         )
         sh.copy(
             f"{DIR+output_folder}output_matching/matched_parametrization.cfg",
-            f"{DIR+output_folder}section_{i}.cfg",
+            f"{DIR+output_folder}section_{i:03d}.cfg",
         )
         sh.copy(
             f"{DIR+output_folder}output_matching/optimization_progress.txt",
-            f"{DIR+output_folder}section_{i}_iterations.txt",
+            f"{DIR+output_folder}section_{i:03d}_iterations.txt",
         )
         os.system(f"rm -rf {DIR+output_folder}output_matching/")
 
@@ -130,7 +138,10 @@ def make_geomTurbo(
     except:
         print("Writing to existing folder, files might have been overwriten.")
 
-    blade = From_param_3D(DIR + config_file)
+    pb_blade = ConfigPasser(DIR+config_file)
+    DeScale(pb_blade.IN, in_place=True)
+
+    blade = From_param_3D(pb_blade.IN)
     blade.output_geomTurbo(
         DIR + output_folder + config_file.split("/")[-1][:-3] + "geomTurbo",
         LE_fillet,

@@ -5,6 +5,7 @@ import time
 
 from parageom.reader import From_param_3D
 from parageom.common import print_parageom
+from parablade import ConfigPasser, DeScale
 
 
 print_parageom()
@@ -57,8 +58,10 @@ try:
 except:
     print("Writing to existing folder, files might have been overwriten.")
 
+IN = ConfigPasser(DIR+args.config_file)
+DeScale(IN, in_place=True)
 
-blade = From_param_3D(DIR+args.config_file)
+blade = From_param_3D(IN)
 blade.output_geomTurbo(
     DIR+args.output_folder+args.config_file.split('/')[-1][:-3]+'geomTurbo',
     bool(args.LE_fillet),
