@@ -97,7 +97,7 @@ class Rotor:
         print(f"Done exporting to {file}")
     
     def parablade_blade_export(
-        self, file = None, normalize = False, iterator = None
+        self, file = None, scale_factor = 1, iterator = None
     ):
 
         """
@@ -106,10 +106,10 @@ class Rotor:
 
         iterator = np.array(np.linspace(0, 180, 10), dtype = 'int') if iterator is None else iterator
         
-        self.parablade_section_export(iterator[0], file = file, dim = "3D", normalize = normalize)
+        self.parablade_section_export(iterator[0], file = file, dim = "3D", scale_factor=scale_factor)
 
         for i in iterator[1:]:
-            self.parablade_section_export(i, file = file, dim = "3D", normalize = normalize, is_new=False)
+            self.parablade_section_export(i, file = file, dim = "3D", scale_factor=scale_factor, is_new=False)
 
 
 
