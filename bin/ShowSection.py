@@ -25,8 +25,8 @@ parser.add_argument(
 )
 parser.add_argument(
     "-s",
-    "--section",
-    help="section index to plot",
+    "--span_percentage",
+    help="position along the span to plot",
     default=0,
     type=int,
 )
@@ -37,6 +37,21 @@ parser.add_argument(
     action='count',
     default=0
 )
+
+def _le_section_getter(le_points, span_percentage):
+
+    target = (le_points[-1]-le_points[0])*(span_percentage*0.01)+le_points[0]
+
+    prev = np.linalg.norm(le_points[0]-target)
+
+    i = 1
+    while prev > np.linalg.norm(le_points[i]-target):
+        prev = np.linalg.norm(le_points[i]-target)
+        i+=1
+        if i == le_points.shape[0]:
+            break
+
+    return i-1
 
 args = parser.parse_args()
 
@@ -55,10 +70,14 @@ colors = [
 ]
 
 for i, file in enumerate(args.geomTurbo_files):
-    rotor = Rotor(From_geomTurbo(file, 'sectioned'))
+
+    geomTurbo = From_geomTurbo(file, "sectioned")
+    rotor = Rotor(geomTurbo)
+    le_points = geomTurbo.rotor_points[0, :, 0]
+    section = _le_section_getter(le_points, args.span_percentage)
 
     points = np.vstack(
-        (rotor.suction_sections[args.section], np.flip(rotor.pressure_sections[args.section], axis = 0))
+        (rotor.suction_sections[section], np.flip(rotor.pressure_sections[section], axis = 0))
     )
 
 
@@ -67,7 +86,7 @@ for i, file in enumerate(args.geomTurbo_files):
 
     if i == 0:
         le = points[0]
-        te = rotor.suction_sections[args.section, -1]
+        te = rotor.suction_sections[section, -1]
 
 ax.set_xlim(le[0]-le[1]/2, te[0]+le[1]/2)
 ax.set_zlim(le[1]-0.3, te[1]+0.3)
