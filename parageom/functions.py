@@ -126,7 +126,8 @@ def match_section(
 
 
 def make_geomTurbo(
-    config_file, output_folder="output_geometry/", LE_fillet=False, TE_fillet=False
+    config_file, output_folder="output_geometry/", N_sections=181, N_points=362,
+    LE_fillet=False, TE_fillet=False
 ):
     DIR = os.getcwd() + "/"
 
@@ -141,7 +142,7 @@ def make_geomTurbo(
     pb_blade = ConfigPasser(DIR+config_file)
     DeScale(pb_blade.IN, in_place=True)
 
-    blade = From_param_3D(pb_blade.IN)
+    blade = From_param_3D(pb_blade.IN, N_sections=N_sections, N_points=N_points)
     blade.output_geomTurbo(
         DIR + output_folder + config_file.split("/")[-1][:-3] + "geomTurbo",
         LE_fillet,

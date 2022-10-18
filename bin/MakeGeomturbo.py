@@ -28,6 +28,20 @@ parser.add_argument(
     type=str,
 )
 parser.add_argument(
+    "-N",
+    "--Nsections",
+    help="number of sections in output geomTurbo file",
+    default=181,
+    type=int,
+)
+parser.add_argument(
+    "-n",
+    "--Npoints",
+    help="number of points in each section. If -TE and -LE are used, more points will be added",
+    default=362,
+    type=int,
+)
+parser.add_argument(
     "-LE",
     "--LE_fillet",
     help="Flag to fillet or not the leading edge",
@@ -61,7 +75,7 @@ except:
 IN = ConfigPasser(DIR+args.config_file)
 DeScale(IN, in_place=True)
 
-blade = From_param_3D(IN)
+blade = From_param_3D(IN, N_sections=args.Nsections, N_points=args.Npoints)
 blade.output_geomTurbo(
     DIR+args.output_folder+args.config_file.split('/')[-1][:-3]+'geomTurbo',
     bool(args.LE_fillet),
