@@ -1,3 +1,4 @@
+from enum import auto
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -16,6 +17,8 @@ def _getlines(file, separator=' '):
 def point_cloud_plot(points, centre = None, ax = None, c = 'grey'):
     """Plots a point cloud, the point list must be with shape (N_points, 3)
     for 3D plot"""
+
+    auto_show = True if ax is None else False
     ax = plt.axes(projection="3d") if ax is None else ax
     ax.plot3D(points.T[0], points.T[2], points.T[1], c)
 
@@ -27,7 +30,7 @@ def point_cloud_plot(points, centre = None, ax = None, c = 'grey'):
         [ub - lb for lb, ub in (getattr(ax, f"get_{a}lim")() for a in "xyz")]
     )
 
-    if ax is None:
+    if auto_show:
         plt.show()
 
 
