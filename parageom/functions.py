@@ -5,8 +5,9 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 
+import parablade.init_files.path as pb_path
 from parablade.blade_match import BladeMatch
-from parablade.common.config import ReadUserInput, WriteBladeConfigFile, ConfigPasser, Scale, DeScale
+from parablade.common.config import ReadUserInput, WriteBladeConfigFile, ConfigPasser, Scale, DeScale, Position, Angles
 
 from parageom.reader import From_param_3D, From_geomTurbo
 from parageom.rotor import Rotor
@@ -14,6 +15,74 @@ import shutil as sh
 
 # This file has a functional version of all the scripts available in bin/
 
+def full_match(
+    geomTurbo_file, work_folder, N_sections
+):
+    initialise_match(geomTurbo_file, work_folder, mode='manual')
+    match_blade(
+        geomTurbo_file, work_folder+'/init.cfg', output_folder=work_folder+'/blade_match_output/', N_sections=N_sections
+    )
+
+
+def initialise_match(geomTurbo_file, work_folder='', mode='manual'):
+
+    # DIR = os.getcwd()
+    path_to_init_files = os.path.dirname(pb_path.__file__)
+
+    if not work_folder.endswith("/"):
+        work_folder += "/"
+
+    try:
+        os.mkdir(os.getcwd() + '/' + work_folder)
+    except:
+        print("Writing to existing folder, files might have been overwriten.")
+
+    if mode == 'manual':
+
+        init = input('\nChoose blade type:\n\t0 for compressor\n\t1 for turbine\n\nSelected type:\t')
+
+        if int(init):
+            sh.copy(path_to_init_files+'/turbine.cfg', work_folder+'init.cfg')
+            IN = ConfigPasser(work_folder+'init.cfg')
+
+        else:
+            sh.copy(path_to_init_files+'/compressor.cfg', work_folder+'init.cfg')
+            IN = ConfigPasser(work_folder+'init.cfg')
+
+        geomTurbo = From_geomTurbo(geomTurbo_file, 'sectioned')
+        le = geomTurbo.rotor_points[0, 0, 0]
+        te = geomTurbo.rotor_points[0, 0, -1]
+        Position(IN, le, te, in_place=True)
+        Angles(IN, le, te, in_place=True)
+        WriteBladeConfigFile(open(work_folder+'init.cfg', 'w'), IN)
+    
+        match_section(
+            geomTurbo_file,
+            work_folder+'init.cfg',
+            output_folder=work_folder
+        )
+
+def _le_lin_sampler(le_points, d_min):
+    indeces = [0]
+    last = le_points[0]
+    limit = (d_min*0.01)*np.sum(np.linalg.norm(le_points[1:]-le_points[:-1], axis=1))
+    for i in range(1, le_points.shape[0]):
+        if np.linalg.norm(le_points[i]-last) > limit:
+            last = le_points[i]
+            indeces.append(i)
+    indeces.append(le_points.shape[0]-1)
+    return np.array(indeces)
+
+def _le_section_getter(le_points, span_percentage):
+    target = (le_points[-1]-le_points[0])*(span_percentage*0.01)+le_points[0]
+    prev = np.linalg.norm(le_points[0]-target)
+    i = 1
+    while prev > np.linalg.norm(le_points[i]-target):
+        prev = np.linalg.norm(le_points[i]-target)
+        i+=1
+        if i == le_points.shape[0]:
+            break
+    return i-1
 
 def match_blade(
     geomTurbo_file, init_config_file, output_folder="blade_match_output/", N_sections=30
@@ -35,19 +104,10 @@ def match_blade(
     geomTurbo = From_geomTurbo(geomTurbo_file, "sectioned")
     le_points = geomTurbo.rotor_points[0, :, 0]
 
-    def _le_lin_sampler(le_points, d_min):
-        indeces = [0]
-        limit = (d_min*0.01)*np.linalg.norm(le_points[-1]-le_points[0])
-        for i in range(1, le_points.shape[0]):
-            if np.linalg.norm(le_points[i]-le_points[i-1]) > limit:
-                indeces.append(i)
-        return np.array(indeces)
-
-
     # change this to be able to linearly space the sections geometrically.
-    sections = _le_lin_sampler(le_points, 100/N_sections)
+    sections = _le_lin_sampler(le_points, 100/(N_sections-1))
 
-    sh.copy(init_config_file, f"{DIR+output_folder}section_-1.cfg")
+    sh.copy(init_config_file, f"{DIR+output_folder}section_-01.cfg")
 
     for i, section_index in enumerate(sections):
         match_section(
@@ -78,7 +138,8 @@ def match_section(
     try:
         os.mkdir(DIR + output_folder)
     except:
-        print("Writing to existing folder, files might have been overwriten.")
+        if not sys._getframe().f_back.f_code.co_name == "initialise_match":
+            print("Writing to existing folder, files might have been overwriten.")
 
     rotor = Rotor(From_geomTurbo(geomTurbo_file, init="sectioned"))
     rotor.parablade_section_export(
@@ -94,7 +155,12 @@ def match_section(
     IN["PRESCRIBED_BLADE_FILENAME"] = (
         DIR + output_folder + f'{config_file.split("/")[-1][:-3]}txt'
     )
-    IN = Scale(IN, scale=rotor.scale_factor, in_place=True)
+    if 'SCALE_FACTOR' in IN and IN['SCALE_FACTOR'] != rotor.scale_factor:
+        IN = Scale(IN, scale=rotor.scale_factor, in_place=True)
+    elif 'SCALE_FACTOR' not in IN:
+        IN = Scale(IN, scale=rotor.scale_factor, in_place=True)
+
+
 
     WriteBladeConfigFile(open(IN["Config_Path"], "w"), IN)
 
@@ -122,7 +188,8 @@ def match_section(
     if not sys._getframe().f_back.f_code.co_name == "match_blade":
         matched_blade_object.match_blade(matching_mode="manual")
 
-    matched_blade_object.match_blade(matching_mode="DVs")
+    if not sys._getframe().f_back.f_code.co_name == "initialise_match":
+        matched_blade_object.match_blade(matching_mode="DVs")
 
 
 def make_geomTurbo(
@@ -150,17 +217,19 @@ def make_geomTurbo(
     )
 
 
-def show_section(*geomTurbo_files, section=0, _3Dimensional=False):
+def show_section(*geomTurbo_files, span_percentage=0, _3Dimensional=False):
 
     # TODO implement 2D plotting
-
     t = time.time()
 
     ax = plt.axes(projection="3d")
     colors = ["red", "blue", "yellow", "orange", "green", "lime", "pink", "purple"]
 
     for i, file in enumerate(geomTurbo_files):
-        rotor = Rotor(From_geomTurbo(file, "sectioned"))
+        geomTurbo = From_geomTurbo(file, "sectioned")
+        rotor = Rotor(geomTurbo)
+        le_points = geomTurbo.rotor_points[0, :, 0]
+        section = _le_section_getter(le_points, span_percentage)
 
         points = np.vstack(
             (
