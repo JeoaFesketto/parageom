@@ -79,6 +79,7 @@ def initialise_match(geomTurbo_file, work_folder='', mode='manual'):
             output_folder=work_folder
         )
 
+
 def _le_lin_sampler(le_points, d_min):
     indeces = [0]
     last = le_points[0]
@@ -90,6 +91,7 @@ def _le_lin_sampler(le_points, d_min):
     indeces.append(le_points.shape[0]-1)
     return np.array(indeces)
 
+
 def _le_section_getter(le_points, span_percentage):
     target = (le_points[-1]-le_points[0])*(span_percentage*0.01)+le_points[0]
     prev = np.linalg.norm(le_points[0]-target)
@@ -100,6 +102,7 @@ def _le_section_getter(le_points, span_percentage):
         if i == le_points.shape[0]:
             break
     return i-1
+
 
 def match_blade(
     geomTurbo_file, init_config_file, output_folder="blade_match_output/", N_sections=30
