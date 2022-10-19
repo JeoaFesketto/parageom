@@ -6,7 +6,7 @@ from geomdl import BSpline
 
 
 class From_geomTurbo:
-    def __init__(self, file, init="unsectioned"):
+    def __init__(self, file, init="sectioned"):
 
         self.file_path = file
         self.rotor_points = None
