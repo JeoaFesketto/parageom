@@ -7,7 +7,7 @@ import numpy as np
 
 import parablade.init_files.path as pb_path
 from parablade.blade_match import BladeMatch
-from parablade.common.config import ReadUserInput, WriteBladeConfigFile, ConfigPasser, Scale, DeScale, Position, Angles
+from parablade.common.config import ReadUserInput, WriteBladeConfigFile, ConfigPasser, Scale, DeScale, Position, Angles, ConcatenateConfig
 
 from parageom.reader import From_param_3D, From_geomTurbo
 from parageom.rotor import Rotor
@@ -22,6 +22,23 @@ def full_match(
     match_blade(
         geomTurbo_file, work_folder+'/init.cfg', output_folder=work_folder+'/blade_match_output/', N_sections=N_sections
     )
+    concatenate_to_blade('blade_match_output', work_folder=work_folder)
+
+def concatenate_to_blade(folder, work_folder = '.'):
+    try:
+        os.rename(work_folder+'/'+folder+'/section_-01.cfg', work_folder+'/'+folder+'/section_-01.old_cfg')
+    except:
+        print(
+            '\nInit config file could not be found, it might have gotten concatenated accidentally.\nCheck number of parameters in concatenated file.'
+        )
+
+    list_to_concat = [
+        ReadUserInput(work_folder+'/'+folder+'/'+file) for file
+        in os.listdir(folder) if file.endswith('.cfg')
+    ]
+    final_cfg = ConcatenateConfig(*list_to_concat)
+    final_cfg['NDIM'] = 3
+    WriteBladeConfigFile(open(work_folder+'/'+'final_output.cfg'), final_cfg)
 
 
 def initialise_match(geomTurbo_file, work_folder='', mode='manual'):
