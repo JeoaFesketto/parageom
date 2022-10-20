@@ -59,18 +59,17 @@ class Rotor:
                 ]
             )
         
-        self.scale_factor = 1
+        self.scale_factor = Initializer_object.scale_factor
 
     def parablade_section_export(
-        self, section_idx, file=None, dim="2D", scale_factor=1, is_new=True
+        self, section_idx, file=None, dim="2D", is_new=True
     ):
 
         """
         Writes the point cloud of a section to a txt file
         """
 
-        self.scale_factor = scale_factor
-        section = self.section_coordinates[section_idx]*scale_factor
+        section = self.section_coordinates[section_idx]*self.scale_factor
 
         if file is None:
             file = "./confidential/blade.txt" if dim == "2D" else "./confidential/3Dblade.txt"
@@ -95,7 +94,7 @@ class Rotor:
         print(f"Done exporting to {file}")
     
     def parablade_blade_export(
-        self, file = None, scale_factor = 1, iterator = None
+        self, file = None, iterator = None
     ):
 
         """
@@ -104,10 +103,10 @@ class Rotor:
 
         iterator = np.array(np.linspace(0, 180, 10), dtype = 'int') if iterator is None else iterator
         
-        self.parablade_section_export(iterator[0], file = file, dim = "3D", scale_factor=scale_factor)
+        self.parablade_section_export(iterator[0], file = file, dim = "3D")
 
         for i in iterator[1:]:
-            self.parablade_section_export(i, file = file, dim = "3D", scale_factor=scale_factor, is_new=False)
+            self.parablade_section_export(i, file = file, dim = "3D", is_new=False)
 
 
 

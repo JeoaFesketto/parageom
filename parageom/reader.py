@@ -6,10 +6,11 @@ from geomdl import BSpline
 
 
 class From_geomTurbo:
-    def __init__(self, file, init="sectioned"):
+    def __init__(self, file, scale_factor=1, init="sectioned"):
 
         self.file_path = file
         self.filename = file.split('/')[-1][:-10]
+        self.scale_factor = scale_factor
         self.rotor_points = None
         self.parameters = None
         self.surfaces = None
