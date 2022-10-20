@@ -9,6 +9,7 @@ class From_geomTurbo:
     def __init__(self, file, init="sectioned"):
 
         self.file_path = file
+        self.filename = file.split('/')[-1][:-10]
         self.rotor_points = None
         self.parameters = None
         self.surfaces = None
