@@ -24,10 +24,14 @@ class Case:
         "scale_factor": 1e-3,  # optimization works best if dims are in meters.
 
         "interactive": True,
+        "overwrite": True,  # allow overwrite
         "auto_concatenate": True,
 
-        "on_hpc": False,
-        "overwrite": True,  # allow overwrite
+        "on_hpc": False, # will force interactive off and overwrite on
+
+        # advanced parameters. check scipy doc for optimization methods.
+        "uv_optim_method":"L-BFGS-B",
+        "dv_optim_method":"SLSQP",
     }
 
     def __init__(self, work_dir, geomTurbo_file, **kwargs):
@@ -150,7 +154,10 @@ class Case:
             _output_path=f"{Case.DIR}/{self.work_dir}",
             _optimization_max_iter=self.optimization_max_iter,
             _convergence_max_dev_rel=self.convergence_max_dev_rel,
-            _convergence_mean_dev_rel=self.convergence_mean_dev_rel
+            _convergence_mean_dev_rel=self.convergence_mean_dev_rel,
+            _uv_optim_method=self.uv_optim_method,
+            _dv_optim_method=self.dv_optim_method,
+
         )
 
         if self.interactive and not _match_blade:
@@ -222,20 +229,22 @@ class Case:
             )
         except:
             raise
+
+        if self.auto_concatenate:
     
-        list_to_concat = [
-            cfg.ReadUserInput(f'{output_path}/{file}') for file
-            in sorted(os.listdir(output_path)) if file.endswith('.cfg')
-        ]
+            list_to_concat = [
+                cfg.ReadUserInput(f'{output_path}/{file}') for file
+                in sorted(os.listdir(output_path)) if file.endswith('.cfg')
+            ]
 
-        final_cfg = cfg.ConcatenateConfig(*list_to_concat)
-        final_cfg['NDIM'] = 3
-        final_cfg['N_SECTIONS'] = N_sections
+            final_cfg = cfg.ConcatenateConfig(*list_to_concat)
+            final_cfg['NDIM'] = 3
+            final_cfg['N_SECTIONS'] = N_sections
 
-        cfg.WriteBladeConfigFile(
-            open(f'{self.work_dir}/{self.geomTurbo.filename}_parametrized.cfg', 'w'),
-            final_cfg
-        )
+            cfg.WriteBladeConfigFile(
+                open(f'{self.work_dir}/{self.geomTurbo.filename}_parametrized.cfg', 'w'),
+                final_cfg
+            )
             
 
     def full_match(self):
