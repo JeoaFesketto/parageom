@@ -18,7 +18,7 @@ class Case:
     DIR = os.getcwd()
 
     defaults = {
-        "optimization_max_iter": 300,
+        "optimization_max_iter": 300, # max number of iterations for one section
         "scale_factor": 1e-3,  # optimization works best if dims are in meters.
 
         "interactive": True,
@@ -31,7 +31,9 @@ class Case:
     def __init__(self, work_dir, geomTurbo_file, **kwargs):
 
         self.work_dir = work_dir
+        self.output_path = self.work_dir
         self.geomTurbo = From_geomTurbo(geomTurbo_file)
+        self.init_config_path = None
 
         for key, value in Case.defaults.items():
             if key in kwargs and type(value) == type(kwargs[key]):
@@ -48,7 +50,7 @@ class Case:
                 warn(f"`{key}` is not an option and will be ignored.")
 
         try:
-            os.mkdir(Case.DIR + "/" + work_dir)
+            os.mkdir(f'{Case.DIR}/{work_dir}')
         except:
             if self.overwrite:
                 print("Writing to existing folder.")
@@ -107,13 +109,18 @@ class Case:
                 _no_subfolder=True,
             )
             optim_object.match_blade(matching_mode="manual")
+        
+        self.init_config_path = IN["Config_Path"]
 
     def match_section(
         self, config_file, section_idx, transfer_info=True, _match_blade=False
     ):
 
         IN = cfg.ReadUserInput(config_file)
-        _initialise_cfg(IN, self.geomTurbo, self.work_dir, section_idx, transfer_info)
+        _initialise_cfg(
+            IN, self.geomTurbo, self.output_path, 
+            section_idx, transfer_info, name=config_file.split('/')[-1][:-4]
+        )
         cfg.WriteBladeConfigFile(open(IN["Config_Path"], "w"), IN)
 
         if self.interactive:
@@ -149,6 +156,8 @@ class Case:
     def match_blade(self, init_config_file, N_sections):
         output_dir = "blade_match_output"
         output_path = f"{self.work_dir}/{output_dir}"
+        self.output_path = output_path
+
         try:
             os.mkdir(f"{output_path}/")
         except OSError as exc:
@@ -186,12 +195,45 @@ class Case:
             )
 
             os.system(f"rm -rf {self.work_dir}/output_matching")
+        
+        try:
+            os.remove(f'{output_path}/section_-01.cfg')
+        except FileNotFoundError:
+            warn(
+                'Init config file not found anymore. ' 
+                'If it is present under a different name, '
+                'it might have gotten concatenated with the rest.'
+            )
+        except:
+            raise
+        try:
+            os.remove(f'{output_path}/section_-01.txt')
+        except FileNotFoundError:
+            warn(
+                'Init prescribed geometry file not found anymore.' 
+            )
+        except:
+            raise
+    
+        list_to_concat = [
+            cfg.ReadUserInput(f'{output_path}/{file}') for file
+            in os.listdir(output_path) if file.endswith('.cfg')
+        ]
+
+        final_cfg = cfg.ConcatenateConfig(*list_to_concat)
+        final_cfg['NDIM'] = 3
+
+        cfg.WriteBladeConfigFile(
+            open(f'{self.work_dir}/{self.geomTurbo.filename}_parametrized.cfg', 'w'),
+            final_cfg
+        )
+            
 
     def full_match(self):
         raise NotImplementedError
 
 
-def _initialise_cfg(IN, geomTurbo, work_dir, section_idx, transfer_info=True):
+def _initialise_cfg(IN, geomTurbo, output_path, section_idx, transfer_info=True, name=None):
 
     if transfer_info:
         le = geomTurbo.rotor_points[0, 0, 0]
@@ -199,17 +241,19 @@ def _initialise_cfg(IN, geomTurbo, work_dir, section_idx, transfer_info=True):
         cfg.Position(IN, le, te, in_place=True)
         # cfg.Angles(IN, le, te, in_place=True)
 
+    name = 'init' if name is None else name
+
     rotor = Rotor(geomTurbo)
     rotor.parablade_section_export(
         section_idx,
-        file=work_dir + "/init.txt",
+        file=f'{output_path}/{name}.txt',
         scale_factor=rotor.scale_factor,
         dim="3D",
     )
 
     IN["NDIM"] = [2]
-    IN["Config_Path"] = f"{Case.DIR}/{work_dir}/init.cfg"
-    IN["PRESCRIBED_BLADE_FILENAME"] = f"{Case.DIR}/{work_dir}/init.txt"
+    IN["Config_Path"] = f"{Case.DIR}/{output_path}/{name}.cfg"
+    IN["PRESCRIBED_BLADE_FILENAME"] = f"{Case.DIR}/{output_path}/{name}.txt"
     if "SCALE_FACTOR" in IN and IN["SCALE_FACTOR"] != rotor.scale_factor:
         IN = cfg.Scale(IN, scale=rotor.scale_factor, in_place=True)
     elif "SCALE_FACTOR" not in IN:
