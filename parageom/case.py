@@ -19,6 +19,8 @@ class Case:
 
     defaults = {
         "optimization_max_iter": 300, # max number of iterations for one section
+        "convergence_max_dev_rel": 0.4, # values in % for the convergence criteria.
+        "convergence_mean_dev_rel": 0.1,
         "scale_factor": 1e-3,  # optimization works best if dims are in meters.
 
         "interactive": True,
@@ -32,7 +34,6 @@ class Case:
 
         self.work_dir = work_dir
         self.output_path = self.work_dir
-        self.geomTurbo = From_geomTurbo(geomTurbo_file)
         self.init_config_path = None
 
         for key, value in Case.defaults.items():
@@ -48,6 +49,8 @@ class Case:
         for key in kwargs:
             if key not in Case.defaults:
                 warn(f"`{key}` is not an option and will be ignored.")
+
+        self.geomTurbo = From_geomTurbo(geomTurbo_file, self.scale_factor)
 
         try:
             os.mkdir(f'{Case.DIR}/{work_dir}')
@@ -90,7 +93,7 @@ class Case:
 
         IN = cfg.ConfigPasser(f"{self.work_dir}/init.cfg")
 
-        _initialise_cfg(IN, self.geomTurbo, self.work_dir, 0)
+        _initialise_cfg(IN, self.geomTurbo, self.work_dir, 0, True, True)
         cfg.WriteBladeConfigFile(open(IN["Config_Path"], "w"), IN)
 
         if self.interactive:
@@ -113,15 +116,15 @@ class Case:
         self.init_config_path = IN["Config_Path"]
 
     def match_section(
-        self, config_file, section_idx, transfer_info=True, _match_blade=False
+        self, config_file, section_idx, transfer_position=True, transfer_angles=False, _match_blade=False
     ):
 
         IN = cfg.ReadUserInput(config_file)
         _initialise_cfg(
             IN, self.geomTurbo, self.output_path, 
-            section_idx, transfer_info, name=config_file.split('/')[-1][:-4]
+            section_idx, transfer_position, transfer_angles, name=config_file.split('/')[-1][:-4],
+            scale_factor=self.scale_factor
         )
-        cfg.WriteBladeConfigFile(open(IN["Config_Path"], "w"), IN)
 
         if self.interactive:
             plot_options = {
@@ -145,10 +148,13 @@ class Case:
             coarseness=1,
             plot_options=plot_options,
             _output_path=f"{Case.DIR}/{self.work_dir}",
-            _optimization_max_iter=self.optimization_max_iter
+            _optimization_max_iter=self.optimization_max_iter,
+            _convergence_max_dev_rel=self.convergence_max_dev_rel,
+            _convergence_mean_dev_rel=self.convergence_mean_dev_rel
         )
 
         if self.interactive and not _match_blade:
+            cfg.WriteBladeConfigFile(open(IN["Config_Path"], "w"), IN)
             optim_object.match_blade(matching_mode="manual")
 
         optim_object.match_blade(matching_mode="DVs")
@@ -166,6 +172,8 @@ class Case:
                     "Writing results to existing directory but `overwrite` is True, code will proceed."
                 )
                 os.system(f"rm -rf {self.work_dir}/output_matching")
+                os.system(f"rm -rf {self.work_dir}/{output_dir}")
+                os.mkdir(f"{output_path}/")
             elif exc.errno == errno.EEXIST and not self.overwrite:
                 raise Exception(
                     "`overwrite` is set to False and folder already exists."
@@ -233,13 +241,15 @@ class Case:
         raise NotImplementedError
 
 
-def _initialise_cfg(IN, geomTurbo, output_path, section_idx, transfer_info=True, name=None):
+def _initialise_cfg(IN, geomTurbo, output_path, section_idx, transfer_position=True, transfer_angles=False, name=None, scale_factor=1):
 
-    if transfer_info:
-        le = geomTurbo.rotor_points[0, 0, 0]
-        te = geomTurbo.rotor_points[0, 0, -1]
-        cfg.Position(IN, le, te, in_place=True)
-        # cfg.Angles(IN, le, te, in_place=True)
+    if transfer_position or transfer_angles:
+        le = geomTurbo.rotor_points[0, section_idx, 0]
+        te = geomTurbo.rotor_points[0, section_idx, -1]
+        if transfer_position:
+            cfg.Position(IN, le, te, in_place=True)
+        if transfer_angles:
+            cfg.Angles(IN, le, te, in_place=True)
 
     name = 'init' if name is None else name
 
@@ -247,17 +257,16 @@ def _initialise_cfg(IN, geomTurbo, output_path, section_idx, transfer_info=True,
     rotor.parablade_section_export(
         section_idx,
         file=f'{output_path}/{name}.txt',
-        scale_factor=rotor.scale_factor,
         dim="3D",
     )
 
     IN["NDIM"] = [2]
     IN["Config_Path"] = f"{Case.DIR}/{output_path}/{name}.cfg"
     IN["PRESCRIBED_BLADE_FILENAME"] = f"{Case.DIR}/{output_path}/{name}.txt"
-    if "SCALE_FACTOR" in IN and IN["SCALE_FACTOR"] != rotor.scale_factor:
-        IN = cfg.Scale(IN, scale=rotor.scale_factor, in_place=True)
+    if "SCALE_FACTOR" in IN and IN["SCALE_FACTOR"] != geomTurbo.scale_factor:
+        IN = cfg.Scale(IN, scale=geomTurbo.scale_factor, in_place=True)
     elif "SCALE_FACTOR" not in IN:
-        IN = cfg.Scale(IN, scale=rotor.scale_factor, in_place=True)
+        IN = cfg.Scale(IN, scale=geomTurbo.scale_factor, in_place=True)
 
 
 def _le_lin_sampler(le_points, d_min):
