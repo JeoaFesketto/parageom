@@ -225,11 +225,12 @@ class Case:
     
         list_to_concat = [
             cfg.ReadUserInput(f'{output_path}/{file}') for file
-            in os.listdir(output_path) if file.endswith('.cfg')
+            in sorted(os.listdir(output_path)) if file.endswith('.cfg')
         ]
 
         final_cfg = cfg.ConcatenateConfig(*list_to_concat)
         final_cfg['NDIM'] = 3
+        final_cfg['N_SECTIONS'] = N_sections
 
         cfg.WriteBladeConfigFile(
             open(f'{self.work_dir}/{self.geomTurbo.filename}_parametrized.cfg', 'w'),
