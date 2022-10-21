@@ -32,6 +32,7 @@ class Case:
         # advanced parameters.
         "uv_optim_method":"L-BFGS-B", # check scipy doc for optimization methods.
         "dv_optim_method":"SLSQP",
+        "max_retries_slsqp":1,
 
         "transfer_position":True,
         "transfer_angles":True,
@@ -169,7 +170,7 @@ class Case:
             _convergence_mean_dev_rel=self.convergence_mean_dev_rel,
             _uv_optim_method=self.uv_optim_method,
             _dv_optim_method=self.dv_optim_method,
-
+            _max_retries_slsqp=self.max_retries_slsqp,
         )
 
         if self.interactive and not _match_blade:
