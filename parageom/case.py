@@ -129,10 +129,18 @@ class Case:
     ):
 
         IN = cfg.ReadUserInput(config_file)
-        _initialise_cfg(
-            IN, self.geomTurbo, self.output_path, 
-            section_idx, self.transfer_position, self.transfer_angles, self.fatten, name=config_file.split('/')[-1][:-4],
-        )
+        name = config_file.split('/')[-1][:-4]
+
+        if name == 'section_-01' or not _match_blade:
+            _initialise_cfg(
+                IN, self.geomTurbo, self.output_path, 
+                section_idx, self.transfer_position, self.transfer_angles, name
+            )
+        else:
+            _initialise_cfg(
+                IN, self.geomTurbo, self.output_path, 
+                section_idx, self.transfer_position, self.transfer_angles, self.fatten, name
+            )
 
         if self.interactive:
             plot_options = {
