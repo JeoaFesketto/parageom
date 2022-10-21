@@ -258,6 +258,10 @@ class Case:
                 open(f'{self.work_dir}/{self.geomTurbo.filename}_parametrized.cfg', 'w'),
                 final_cfg
             )
+    
+    def refine(self, mean_deviation_threshold, max_deviation_threshold):
+        """This function allows the user to refine the sections that are not well converged enough."""
+        raise NotImplementedError()
             
 
 def _initialise_cfg(IN, geomTurbo, output_path, section_idx, transfer_position=True, transfer_angles=False, fatten=False, name=None):
