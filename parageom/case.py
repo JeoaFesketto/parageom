@@ -34,7 +34,7 @@ class Case:
         "dv_optim_method":"SLSQP",
 
         "transfer_position":True,
-        "transfer_angle":True,
+        "transfer_angles":True,
         "fatten":False
 
     }
