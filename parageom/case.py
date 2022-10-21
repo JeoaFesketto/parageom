@@ -29,9 +29,14 @@ class Case:
 
         "on_hpc": False, # will force interactive off and overwrite on
 
-        # advanced parameters. check scipy doc for optimization methods.
-        "uv_optim_method":"L-BFGS-B",
+        # advanced parameters.
+        "uv_optim_method":"L-BFGS-B", # check scipy doc for optimization methods.
         "dv_optim_method":"SLSQP",
+
+        "transfer_position":True,
+        "transfer_angle":True,
+        "fatten":False
+
     }
 
     def __init__(self, work_dir, geomTurbo_file, **kwargs):
@@ -120,14 +125,13 @@ class Case:
         self.init_config_path = IN["Config_Path"]
 
     def match_section(
-        self, config_file, section_idx, transfer_position=True, transfer_angles=False, _match_blade=False
+        self, config_file, section_idx, _match_blade=False
     ):
 
         IN = cfg.ReadUserInput(config_file)
         _initialise_cfg(
             IN, self.geomTurbo, self.output_path, 
-            section_idx, transfer_position, transfer_angles, name=config_file.split('/')[-1][:-4],
-            scale_factor=self.scale_factor
+            section_idx, self.transfer_position, self.transfer_angles, self.fatten, name=config_file.split('/')[-1][:-4],
         )
 
         if self.interactive:
@@ -197,7 +201,7 @@ class Case:
         for i, section_index in enumerate(sections):
 
             self.match_section(
-                f"{output_path}/section_{i-1:03d}.cfg", section_index, _match_blade=True
+                f"{output_path}/section_{i-1:03d}.cfg", section_index, _match_blade=True,
             )
 
             sh.copy(
@@ -247,11 +251,7 @@ class Case:
             )
             
 
-    def full_match(self):
-        raise NotImplementedError
-
-
-def _initialise_cfg(IN, geomTurbo, output_path, section_idx, transfer_position=True, transfer_angles=False, name=None, scale_factor=1):
+def _initialise_cfg(IN, geomTurbo, output_path, section_idx, transfer_position=True, transfer_angles=False, fatten=False, name=None):
 
     if transfer_position or transfer_angles:
         le = geomTurbo.rotor_points[0, section_idx, 0]
@@ -260,6 +260,9 @@ def _initialise_cfg(IN, geomTurbo, output_path, section_idx, transfer_position=T
             cfg.Position(IN, le, te, in_place=True)
         if transfer_angles:
             cfg.Angles(IN, le, te, in_place=True)
+        if fatten:
+            cfg.Fatten(IN, in_place=True)
+
 
     name = 'init' if name is None else name
 
