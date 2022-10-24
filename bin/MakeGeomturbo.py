@@ -1,20 +1,14 @@
 #!/usr/bin/env python3
-import os
 import argparse
-import time
 
-from parageom.reader import From_param_3D
 from parageom.common import print_parageom
-from parablade import ConfigPasser, DeScale
-
+from parageom.functions import make_geomTurbo
 
 print_parageom()
 
 # ARGUMENT DEFINITION
 
-parser = argparse.ArgumentParser(
-    description="Build .geomTurbo file from .cfg file"
-)
+parser = argparse.ArgumentParser(description="Build .geomTurbo file from .cfg file")
 parser.add_argument(
     "config_file",
     help="Parablade configuration file to be used to generate the .geomTurbo file.",
@@ -45,42 +39,24 @@ parser.add_argument(
     "-LE",
     "--LE_fillet",
     help="Flag to fillet or not the leading edge",
-    action='count',
+    action="count",
     default=0,
 )
 parser.add_argument(
     "-TE",
     "--TE_fillet",
     help="Flag to fillet or not the trailing edge",
-    action='count',
+    action="count",
     default=0,
 )
 
-
 args = parser.parse_args()
-DIR = os.getcwd() + "/"
 
-t = time.time()
-
-# SCRIPT STARTS HERE:
-
-if not args.output_folder.endswith("/"):
-    args.output_folder += "/"
-
-try:
-    os.mkdir(DIR + args.output_folder)
-except:
-    print("Writing to existing folder, files might have been overwriten.")
-
-IN = ConfigPasser(DIR+args.config_file)
-DeScale(IN, in_place=True)
-
-blade = From_param_3D(IN, N_sections=args.Nsections, N_points=args.Npoints)
-blade.output_geomTurbo(
-    DIR+args.output_folder+args.config_file.split('/')[-1][:-3]+'geomTurbo',
-    bool(args.LE_fillet),
-    bool(args.TE_fillet)
+make_geomTurbo(
+    args.config_file,
+    output_folder=args.output_folder,
+    N_sections=args.Nsections,
+    N_points=args.Npoints,
+    LE_fillet=bool(args.LE_fillet),
+    TE_fillet=bool(args.TE_fillet),
 )
-
-
-print('This was generated in %(my_time).5f seconds\n' % {'my_time': time.time() - t})

@@ -13,11 +13,97 @@ from parageom.reader import From_param_3D, From_geomTurbo
 from parageom.rotor import Rotor
 import shutil as sh
 
+
+
 # This file has a functional version of all the scripts available in bin/
+def make_geomTurbo(
+    config_file, output_folder="output_geometry/", N_sections=181, N_points=362,
+    LE_fillet=False, TE_fillet=False
+):
+    DIR = os.getcwd() + "/"
+
+    t = time.time()
+    
+    if not output_folder.endswith("/"):
+        output_folder += "/"
+
+    try:
+        os.mkdir(DIR + output_folder)
+    except:
+        print("Writing to existing folder, files might have been overwriten.")
+
+    IN = ConfigPasser(DIR+config_file)
+    DeScale(IN, in_place=True)
+
+    blade = From_param_3D(IN, N_sections=N_sections, N_points=N_points)
+    blade.output_geomTurbo(
+        DIR + output_folder + config_file.split("/")[-1][:-3] + "geomTurbo",
+        LE_fillet,
+        TE_fillet,
+    )
+    print('This was generated in %(my_time).5f seconds\n' % {'my_time': time.time() - t})
+
+
+def show_section(*geomTurbo_files, span_percentage=0, _3Dimensional=False):
+
+    # TODO implement 2D plotting
+    t = time.time()
+
+    ax = plt.axes(projection="3d")
+    colors = ["red", "blue", "yellow", "orange", "green", "lime", "pink", "purple"]
+
+    for i, file in enumerate(geomTurbo_files):
+        geomTurbo = From_geomTurbo(file, "sectioned")
+        rotor = Rotor(geomTurbo)
+        le_points = geomTurbo.rotor_points[0, :, 0]
+        section = _le_section_getter(le_points, span_percentage)
+
+        points = np.vstack(
+            (
+                rotor.suction_sections[section],
+                np.flip(rotor.pressure_sections[section], axis=0),
+            )
+        )
+
+        ax.plot3D(points.T[0], points.T[2], points.T[1], colors[i])
+        print(f"\t\tplotted {file} in {colors[i]}")
+
+        if i == 0:
+            le = points[0]
+            te = rotor.suction_sections[section, -1]
+
+    ax.set_xlim(le[0] - le[1] / 2, te[0] + le[1] / 2)
+    ax.set_zlim(le[1] - 0.3, te[1] + 0.3)
+    ax.set_ylim(le[2] - 0.3, te[2] + 0.3)
+    ax.set_box_aspect(
+        [ub - lb for lb, ub in (getattr(ax, f"get_{a}lim")() for a in "xyz")]
+    )
+
+    print(
+        "This was generated in %(my_time).5f seconds\n" % {"my_time": time.time() - t}
+    )
+
+    plt.show()
+
+def _le_section_getter(le_points, span_percentage):
+    target = (le_points[-1]-le_points[0])*(span_percentage*0.01)+le_points[0]
+    prev = np.linalg.norm(le_points[0]-target)
+    i = 1
+    while prev > np.linalg.norm(le_points[i]-target):
+        prev = np.linalg.norm(le_points[i]-target)
+        i+=1
+        if i == le_points.shape[0]:
+            break
+    return i-1
+
+# DEPRECATED FUNCTIONS:
 
 def full_match(
     geomTurbo_file, work_folder, N_sections
 ):
+    raise DeprecationWarning(
+        'This is deprecated. Use available methods in `case.py` instead.'
+    )
     initialise_match(geomTurbo_file, work_folder, mode='manual')
     match_blade(
         geomTurbo_file, work_folder+'/init.cfg', output_folder=work_folder+'/blade_match_output/', N_sections=N_sections
@@ -43,6 +129,10 @@ def concatenate_to_blade(folder, work_folder = '.'):
 
 def initialise_match(geomTurbo_file, work_folder='', mode='manual'):
 
+    raise DeprecationWarning(
+        'This is deprecated, use `Case.initialise_case()` '
+        'instead.'
+    )
     # DIR = os.getcwd()
     path_to_init_files = os.path.dirname(pb_path.__file__)
 
@@ -92,21 +182,15 @@ def _le_lin_sampler(le_points, d_min):
     return np.array(indeces)
 
 
-def _le_section_getter(le_points, span_percentage):
-    target = (le_points[-1]-le_points[0])*(span_percentage*0.01)+le_points[0]
-    prev = np.linalg.norm(le_points[0]-target)
-    i = 1
-    while prev > np.linalg.norm(le_points[i]-target):
-        prev = np.linalg.norm(le_points[i]-target)
-        i+=1
-        if i == le_points.shape[0]:
-            break
-    return i-1
 
 
 def match_blade(
     geomTurbo_file, init_config_file, output_folder="blade_match_output/", N_sections=30
 ):
+    raise DeprecationWarning(
+        'This is deprecated, use `Case.match_blade` '
+        'instead.'
+    )
 
     DIR = os.getcwd() + "/"
 
@@ -150,6 +234,10 @@ def match_blade(
 def match_section(
     geomTurbo_file, config_file, output_folder="section_match_output/", section_index=0
 ):
+    raise DeprecationWarning(
+        'This is deprecated, use `Case.match_section` '
+        'instead.'
+    )
     DIR = os.getcwd() + "/"
 
     if not output_folder.endswith("/"):
@@ -211,69 +299,3 @@ def match_section(
     if not sys._getframe().f_back.f_code.co_name == "initialise_match":
         matched_blade_object.match_blade(matching_mode="DVs")
 
-
-def make_geomTurbo(
-    config_file, output_folder="output_geometry/", N_sections=181, N_points=362,
-    LE_fillet=False, TE_fillet=False
-):
-    DIR = os.getcwd() + "/"
-
-    if not output_folder.endswith("/"):
-        output_folder += "/"
-
-    try:
-        os.mkdir(DIR + output_folder)
-    except:
-        print("Writing to existing folder, files might have been overwriten.")
-
-    pb_blade = ConfigPasser(DIR+config_file)
-    DeScale(pb_blade.IN, in_place=True)
-
-    blade = From_param_3D(pb_blade.IN, N_sections=N_sections, N_points=N_points)
-    blade.output_geomTurbo(
-        DIR + output_folder + config_file.split("/")[-1][:-3] + "geomTurbo",
-        LE_fillet,
-        TE_fillet,
-    )
-
-
-def show_section(*geomTurbo_files, span_percentage=0, _3Dimensional=False):
-
-    # TODO implement 2D plotting
-    t = time.time()
-
-    ax = plt.axes(projection="3d")
-    colors = ["red", "blue", "yellow", "orange", "green", "lime", "pink", "purple"]
-
-    for i, file in enumerate(geomTurbo_files):
-        geomTurbo = From_geomTurbo(file, "sectioned")
-        rotor = Rotor(geomTurbo)
-        le_points = geomTurbo.rotor_points[0, :, 0]
-        section = _le_section_getter(le_points, span_percentage)
-
-        points = np.vstack(
-            (
-                rotor.suction_sections[section],
-                np.flip(rotor.pressure_sections[section], axis=0),
-            )
-        )
-
-        ax.plot3D(points.T[0], points.T[2], points.T[1], colors[i])
-        print(f"\t\tplotted {file} in {colors[i]}")
-
-        if i == 0:
-            le = points[0]
-            te = rotor.suction_sections[section, -1]
-
-    ax.set_xlim(le[0] - le[1] / 2, te[0] + le[1] / 2)
-    ax.set_zlim(le[1] - 0.3, te[1] + 0.3)
-    ax.set_ylim(le[2] - 0.3, te[2] + 0.3)
-    ax.set_box_aspect(
-        [ub - lb for lb, ub in (getattr(ax, f"get_{a}lim")() for a in "xyz")]
-    )
-
-    print(
-        "This was generated in %(my_time).5f seconds\n" % {"my_time": time.time() - t}
-    )
-
-    plt.show()
