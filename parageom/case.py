@@ -119,6 +119,10 @@ class Case:
             )
             optim_object.match_blade(matching_mode="manual")
 
+        IN = cfg.ReadUserInput(IN['Config_Path'])
+        cfg.DeScale(IN, True)
+        cfg.WriteBladeConfigFile(open(IN["Config_Path"], "w"), IN)
+
         self.init_config_path = IN["Config_Path"]
 
     def match_section(self, config_file, section_idx, _match_blade=False):
@@ -222,7 +226,7 @@ class Case:
 
         sections = _le_lin_sampler(le_points, 100 / (N_sections - 1))
         json.dump(
-            {"geomTurbo_section_indeces": sections},
+            {"geomTurbo_section_indeces": list(np.asarray(sections, dtype=float))},
             open(f"{self.work_dir}/sections.json", "w"),
         )
 
@@ -276,7 +280,7 @@ class Case:
 
             final_cfg = cfg.ConcatenateConfig(*list_to_concat)
             final_cfg["NDIM"] = 3
-            final_cfg["N_SECTIONS"] = N_sections
+            final_cfg["N_SECTIONS"] = N_sections*2
 
             cfg.WriteBladeConfigFile(
                 open(
@@ -444,6 +448,7 @@ def _initialise_cfg(
     IN["NDIM"] = [2]
     IN["Config_Path"] = f"{Case.DIR}/{output_path}/{name}.cfg"
     IN["PRESCRIBED_BLADE_FILENAME"] = f"{Case.DIR}/{output_path}/{name}.txt"
+
     if "SCALE_FACTOR" in IN and IN["SCALE_FACTOR"] != geomTurbo.scale_factor:
         IN = cfg.Scale(IN, scale=geomTurbo.scale_factor, in_place=True)
     elif "SCALE_FACTOR" not in IN:
