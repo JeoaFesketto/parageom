@@ -4,6 +4,7 @@ from warnings import warn
 
 import numpy as np
 import shutil as sh
+import json
 
 import parablade.init_files.path as pb_path
 import parablade.common.config as cfg
@@ -37,14 +38,14 @@ class Case:
         "transfer_position":True,
         "transfer_angles":True,
         "fatten":False
-
     }
 
     def __init__(self, work_dir, geomTurbo_file, **kwargs):
 
         self.work_dir = work_dir
-        self.output_path = self.work_dir
+        self.output_path = f'{self.work_dir}/blade_match_output'
         self.init_config_path = None
+        self.residuals=None
 
         for key, value in Case.defaults.items():
             if key in kwargs and type(value) == type(kwargs[key]):
@@ -66,7 +67,7 @@ class Case:
             os.mkdir(f'{Case.DIR}/{work_dir}')
         except:
             if self.overwrite:
-                print("Writing to existing folder.")
+                print("Will be writing to existing folder.")
             else:
                 raise Exception(
                     "`overwrite` option is set to False and folder already exists."
@@ -186,6 +187,7 @@ class Case:
 
         try:
             os.mkdir(f"{output_path}/")
+            os.mkdir(f"{output_path}/residuals/")
         except OSError as exc:
             if exc.errno == errno.EEXIST and self.overwrite:
                 warn(
@@ -194,6 +196,7 @@ class Case:
                 os.system(f"rm -rf {self.work_dir}/output_matching")
                 os.system(f"rm -rf {self.work_dir}/{output_dir}")
                 os.mkdir(f"{output_path}/")
+                os.mkdir(f"{output_path}/residuals/")
             elif exc.errno == errno.EEXIST and not self.overwrite:
                 raise Exception(
                     "`overwrite` is set to False and folder already exists."
@@ -204,6 +207,7 @@ class Case:
         le_points = self.geomTurbo.rotor_points[0, :, 0]
 
         sections = _le_lin_sampler(le_points, 100 / (N_sections - 1))
+        json.dump({'geomTurbo_section_indeces':sections}, open(f'{self.work_dir}/sections.json', 'w'))
 
         sh.copy(init_config_file, f"{output_path}/section_{-1:03d}.cfg")
 
@@ -219,7 +223,7 @@ class Case:
             )
             sh.copy(
                 f"{self.work_dir}/output_matching/optimization_progress.txt",
-                f"{output_path}/section_{i:03d}_iterations.txt",
+                f"{output_path}/residuals/section_{i:03d}_iterations.txt",
             )
 
             os.system(f"rm -rf {self.work_dir}/output_matching")
@@ -243,6 +247,8 @@ class Case:
         except:
             raise
 
+        self.residuals=self.get_residuals()
+
         if self.auto_concatenate:
     
             list_to_concat = [
@@ -261,8 +267,117 @@ class Case:
     
     def refine(self, mean_deviation_threshold, max_deviation_threshold):
         """This function allows the user to refine the sections that are not well converged enough."""
-        raise NotImplementedError()
-            
+
+        if not self.interactive:
+            raise NotImplementedError()
+
+        if self.residuals is None:
+            self.residuals = self.get_residuals(False)
+        
+        geomTurbo_sections = json.load(open(f'{self.work_dir}/sections.json', 'r'))['geomTurbo_section_indeces']
+        geomTurbo_sections = list(map(int, geomTurbo_sections))
+
+        self.convergence_max_dev_rel=max_deviation_threshold
+        self.convergence_mean_dev_rel=mean_deviation_threshold
+
+        modded=[] 
+        for i, section in enumerate(self.residuals):
+            if (
+                section[-1][-2]>mean_deviation_threshold
+            ) or (
+                section[-1][-1]>max_deviation_threshold
+            ):
+                print(f'Section {i} needs refining')
+                sh.copy(f'{self.output_path}/section_{i:03d}.cfg', f'{self.output_path}/new_section_{i:03d}.cfg')
+
+                IN = cfg.ReadUserInput(f'{self.output_path}/new_section_{i:03d}.cfg')
+
+                _initialise_cfg(
+                    IN, self.geomTurbo, self.output_path, 
+                    geomTurbo_sections[i], self.transfer_position, self.transfer_angles, self.fatten, name=f'new_section_{i:03d}'
+                )
+
+                plot_options = {
+                    "view_xy": "yes",  # 2D Recommended
+                    "view_xR": "yes",  # 3D Recommended
+                    "view_yz": "no",  # 3D Optional
+                    "view_3D": "yes",  # 3D Recommended
+                    "error_distribution": "yes",
+                }
+                os.system(f"rm -rf {self.work_dir}/output_matching")
+                optim_object = BladeMatch(
+                    IN,
+                    coarseness=1,
+                    plot_options=plot_options,
+                    _output_path=f"{Case.DIR}/{self.work_dir}",
+                    _optimization_max_iter=self.optimization_max_iter,
+                    _convergence_max_dev_rel=self.convergence_max_dev_rel,
+                    _convergence_mean_dev_rel=self.convergence_mean_dev_rel,
+                    _uv_optim_method=self.uv_optim_method,
+                    _dv_optim_method=self.dv_optim_method,
+                    _max_retries_slsqp=self.max_retries_slsqp,
+                )
+
+                cfg.WriteBladeConfigFile(open(IN["Config_Path"], "w"), IN)
+                optim_object.match_blade(matching_mode="manual_sliders")
+
+                optim_object.match_blade(matching_mode="DVs")
+                modded.append(i)
+
+                sh.copy(
+                    f"{self.work_dir}/output_matching/matched_parametrization.cfg",
+                    f"{self.output_path}/new_section_{i:03d}.cfg",
+                )
+                try:
+                    os.remove(f"{self.output_path}/residuals/section_{i:03d}_iterations.txt")
+                except:
+                    pass
+                    
+                sh.copy(
+                    f"{self.work_dir}/output_matching/optimization_progress.txt",
+                    f"{self.output_path}/residuals/section_{i:03d}_iterations.txt",
+                )
+                os.system(f"rm -rf {self.work_dir}/output_matching")
+
+        answer='' 
+        print(modded)
+        while answer not in ['y', 'n', 'yes', 'no']:
+            answer = input('\n\n\tOverwrite with new cfg files? \ny/n:\t\t')
+
+        if answer in ['y', 'yes']:
+            for i in modded:
+                os.remove(f'{self.output_path}/section_{i:03d}.cfg')
+                sh.copy(
+                    f"{self.output_path}/new_section_{i:03d}.cfg", 
+                    f'{self.output_path}/section_{i:03d}.cfg'
+                )
+                os.remove(f"{self.output_path}/new_section_{i:03d}.cfg")
+
+        self.get_residuals()
+
+
+    def get_residuals(self, print_residuals=True):
+        residuals = []
+        for file in sorted(os.listdir(f'{self.output_path}/residuals')):
+            if file.endswith('s.txt'):
+                with open(f'{self.output_path}/residuals/{file}', 'r') as f:
+                    data = list(map(lambda x: x.rstrip('\n').split(' \t '), f.readlines()[1:]))
+                    data = list(map(lambda x: list(map(lambda y: float(y), x)), data))
+                residuals.append(data)
+        
+        if print_residuals:
+            print(
+                "\n Iteration \t Mean deviation (m) \t Maximum deviation (m) \t Mean deviation (%) \t Maximum deviation (%)"
+            )
+            for i, residual in enumerate(residuals):
+                print(f'\nSection {i}:')
+                for iteration in residual[-1:]:
+                    for element in iteration:
+                        print(element, end=' \t ')
+                    print()
+
+        return residuals
+        
 
 def _initialise_cfg(IN, geomTurbo, output_path, section_idx, transfer_position=True, transfer_angles=False, fatten=False, name=None):
 
