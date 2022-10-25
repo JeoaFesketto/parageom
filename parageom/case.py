@@ -416,7 +416,7 @@ class Case:
         cfg.WriteBladeConfigFile(open(IN['Config_Path'], 'w'), IN)
 
         if self.interactive:
-            plot_options={ "view_xy": "yes","view_xR": "yes","view_yz": "no","view_3D": "yes","error_distribution": "no" }
+            plot_options={ "view_xy": "yes","view_xR": "no","view_yz": "no","view_3D": "no","error_distribution": "no" }
         else:
             plot_options={ "view_xy": "no","view_xR": "no","view_yz": "no","view_3D": "no","error_distribution": "no" }
 
