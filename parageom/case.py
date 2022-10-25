@@ -419,7 +419,17 @@ class Case:
             plot_options={ "view_xy": "yes","view_xR": "yes","view_yz": "no","view_3D": "yes","error_distribution": "no" }
         else:
             plot_options={ "view_xy": "no","view_xR": "no","view_yz": "no","view_3D": "no","error_distribution": "no" }
-        o = BladeMatch(IN, plot_options)
+        o = BladeMatch(
+            IN, 
+            plot_options,
+            _output_path=f"{Case.DIR}/{self.work_dir}",
+            _optimization_max_iter=self.optimization_max_iter,
+            _convergence_max_dev_rel=self.convergence_max_dev_rel,
+            _convergence_mean_dev_rel=self.convergence_mean_dev_rel,
+            _uv_optim_method=self.uv_optim_method,
+            _dv_optim_method=self.dv_optim_method,
+            _max_retries_slsqp=self.max_retries_slsqp,
+        )
         o.match_blade('DVs')
         # sh.copy(f'{self.work_dir}/output_matching/')
 
