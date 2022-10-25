@@ -23,11 +23,14 @@ class Case:
         "convergence_max_dev_rel": 0.4,  # values in % for the convergence criteria.
         "convergence_mean_dev_rel": 0.1,
         "scale_factor": 1e-3,  # optimization works best if dims are in meters.
+        "xyz": "xyz", # order of the coordinates in the geomTurbo file: chord, thickness, span
         "interactive": True,
         "overwrite": True,  # allow overwrite
         "auto_concatenate": True,
         "on_hpc": False,  # will force interactive off and overwrite on
+        
         # advanced parameters.
+
         "uv_optim_method": "L-BFGS-B",  # check scipy doc for optimization methods.
         "dv_optim_method": "SLSQP",
         "max_retries_slsqp": 1,
@@ -57,7 +60,7 @@ class Case:
             if key not in Case.defaults:
                 warn(f"`{key}` is not an option and will be ignored.")
 
-        self.geomTurbo = From_geomTurbo(geomTurbo_file, self.scale_factor)
+        self.geomTurbo = From_geomTurbo(geomTurbo_file, self.scale_factor, xyz=self.xyz)
 
         try:
             os.mkdir(f"{Case.DIR}/{work_dir}")
