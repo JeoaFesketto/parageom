@@ -419,9 +419,11 @@ class Case:
             plot_options={ "view_xy": "yes","view_xR": "yes","view_yz": "no","view_3D": "yes","error_distribution": "no" }
         else:
             plot_options={ "view_xy": "no","view_xR": "no","view_yz": "no","view_3D": "no","error_distribution": "no" }
+
         o = BladeMatch(
             IN, 
-            plot_options,
+            coarseness=1,
+            plot_options=plot_options,
             _output_path=f"{Case.DIR}/{self.work_dir}",
             _optimization_max_iter=self.optimization_max_iter,
             _convergence_max_dev_rel=self.convergence_max_dev_rel,
