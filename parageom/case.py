@@ -393,6 +393,36 @@ class Case:
 
         self.get_residuals()
 
+    def refine_3D(self):
+
+        points = []
+
+        for file in os.listdir(self.output_path):
+            if file.endswith('.txt'):
+                points.append(np.loadtxt(f'{self.output_path}/{file}'))
+        
+        final = np.stack(tuple(points), axis=0)
+        final = final.reshape((-1, 4))
+        final = final[:, [0, 3, 2, 1]]
+        np.savetxt(f'{self.work_dir}/3D_points.txt', final, delimiter='\t')
+        
+        file = [file for file in os.listdir(self.work_dir) if file.endswith('parametrized.cfg')][0]
+
+        IN = cfg.ReadUserInput(f'{self.work_dir}/{file}')
+        cfg.Scale(IN, scale= self.scale_factor, in_place=True)
+        IN['N_SECTIONS']=[len(points)]
+        IN['PRESCRIBED_BLADE_FILENAME']=f'{self.work_dir}/3D_points.txt'
+        IN['Config_Path']=f'{self.work_dir}/3D_parametrized.cfg'
+        cfg.WriteBladeConfigFile(open(IN['Config_Path'], 'w'), IN)
+
+        if self.interactive:
+            plot_options={ "view_xy": "yes","view_xR": "yes","view_yz": "no","view_3D": "yes","error_distribution": "no" }
+        else:
+            plot_options={ "view_xy": "no","view_xR": "no","view_yz": "no","view_3D": "no","error_distribution": "no" }
+        o = BladeMatch(IN, plot_options)
+        o.match_blade('DVs')
+        # sh.copy(f'{self.work_dir}/output_matching/')
+
     def get_residuals(self, print_residuals=True):
         residuals = []
         for file in sorted(os.listdir(f"{self.output_path}/residuals")):
