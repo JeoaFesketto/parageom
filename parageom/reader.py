@@ -6,11 +6,12 @@ from geomdl import BSpline
 
 
 class From_geomTurbo:
-    def __init__(self, file, scale_factor=1, init="sectioned"):
+    def __init__(self, file, scale_factor=1, init="sectioned", xyz='xyz'):
 
         self.file_path = file
         self.filename = file.split('/')[-1][:-10]
         self.scale_factor = scale_factor
+        self.xyz=xyz
         self.rotor_points = None
         self.parameters = None
         self.surfaces = None
@@ -133,6 +134,10 @@ class From_geomTurbo:
         self.rotor_points = np.array(content, dtype="float").reshape(
             (2, N_sections, N_points, 3)
         )
+
+        if self.xyz!='xyz':
+            xyz = self.xyz.replace('x', '0').replace('y', '1').replace('z', '2')
+            self.rotor_points = self.rotor_points[..., [int(xyz[0]), int(xyz[1]), int(xyz[2])]]
 
 
 class From_param_2D:
