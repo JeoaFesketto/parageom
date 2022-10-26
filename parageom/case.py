@@ -78,6 +78,8 @@ class Case:
 
         if template is not None:
             pass
+        elif "init.cfg" in os.listdir(self.work_dir):
+            template = f'{self.work_dir}/init.cfg'
         elif self.interactive:
             template = input(
                 "\nChoose blade type:\n\t0 for compressor\n\t1 for turbine\n\nSelected type:\t"
@@ -196,6 +198,9 @@ class Case:
         if init_config_file is None:
             if self.init_config_path is not None:
                 init_config_file = self.init_config_path
+            elif 'init.cfg' in os.listdir(self.work_dir):
+                init_config_file = f'{self.work_dir}/init.cfg'
+                self.init_config_path = init_config_file
             else:
                 raise ValueError(
                     'Init config file not specified and not '
@@ -283,7 +288,7 @@ class Case:
 
             final_cfg = cfg.ConcatenateConfig(*list_to_concat)
             final_cfg["NDIM"] = 3
-            final_cfg["N_SECTIONS"] = N_sections*2
+            final_cfg["N_SECTIONS"] = sections.shape[0]
 
             cfg.WriteBladeConfigFile(
                 open(
@@ -433,6 +438,7 @@ class Case:
             _max_retries_slsqp=self.max_retries_slsqp,
         )
         o.match_blade('DVs')
+        # TODO finish copying the file back to where it needs to be
         # sh.copy(f'{self.work_dir}/output_matching/')
 
     def get_residuals(self, print_residuals=True):
