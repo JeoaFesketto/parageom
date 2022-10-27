@@ -72,6 +72,29 @@ class Case:
                     "`overwrite` option is set to False and folder already exists."
                 )
 
+        output_dir = "blade_match_output"
+        output_path = f"{self.work_dir}/{output_dir}"
+        self.output_path = output_path
+
+        try:
+            os.mkdir(f"{output_path}/")
+            os.mkdir(f"{output_path}/residuals/")
+        except OSError as exc:
+            if exc.errno == errno.EEXIST and self.overwrite:
+                warn(
+                    "Writing results to existing directory but `overwrite` is True, code will proceed."
+                )
+                os.system(f"rm -rf {self.work_dir}/output_matching")
+                # os.system(f"rm -rf {output_path}")
+                # os.mkdir(f"{output_path}/")
+                # os.mkdir(f"{output_path}/residuals/")
+            elif exc.errno == errno.EEXIST and not self.overwrite:
+                raise Exception(
+                    "`overwrite` is set to False and folder already exists."
+                )
+            else:
+                raise
+
     def initialise_case(self, template=None):
 
         init_f_path = os.path.dirname(pb_path.__file__)
@@ -190,6 +213,7 @@ class Case:
         if self.interactive and not _match_blade:
             cfg.WriteBladeConfigFile(open(IN["Config_Path"], "w"), IN)
             optim_object.match_blade(matching_mode="manual")
+            optim_object.match_blade(matching_mode="manual_sliders")
 
         optim_object.match_blade(matching_mode="DVs")
 
@@ -207,28 +231,13 @@ class Case:
                     'found in object.'
                 )
 
-        output_dir = "blade_match_output"
-        output_path = f"{self.work_dir}/{output_dir}"
-        self.output_path = output_path
 
         try:
+            os.system(f"rm -rf {output_path}")
             os.mkdir(f"{output_path}/")
             os.mkdir(f"{output_path}/residuals/")
-        except OSError as exc:
-            if exc.errno == errno.EEXIST and self.overwrite:
-                warn(
-                    "Writing results to existing directory but `overwrite` is True, code will proceed."
-                )
-                os.system(f"rm -rf {self.work_dir}/output_matching")
-                os.system(f"rm -rf {self.work_dir}/{output_dir}")
-                os.mkdir(f"{output_path}/")
-                os.mkdir(f"{output_path}/residuals/")
-            elif exc.errno == errno.EEXIST and not self.overwrite:
-                raise Exception(
-                    "`overwrite` is set to False and folder already exists."
-                )
-            else:
-                raise
+        except:
+            pass
 
         le_points = self.geomTurbo.rotor_points[0, :, 0]
 
@@ -238,29 +247,29 @@ class Case:
             open(f"{self.work_dir}/sections.json", "w"),
         )
 
-        sh.copy(init_config_file, f"{output_path}/section_{-1:03d}.cfg")
+        sh.copy(init_config_file, f"{self.output_path}/section_{-1:03d}.cfg")
 
         for i, section_index in enumerate(sections):
 
             self.match_section(
-                f"{output_path}/section_{i-1:03d}.cfg",
+                f"{self.output_path}/section_{i-1:03d}.cfg",
                 section_index,
                 _match_blade=True,
             )
 
             sh.copy(
                 f"{self.work_dir}/output_matching/matched_parametrization.cfg",
-                f"{output_path}/section_{i:03d}.cfg",
+                f"{self.output_path}/section_{i:03d}.cfg",
             )
             sh.copy(
                 f"{self.work_dir}/output_matching/optimization_progress.txt",
-                f"{output_path}/residuals/section_{i:03d}_iterations.txt",
+                f"{self.output_path}/residuals/section_{i:03d}_iterations.txt",
             )
 
             os.system(f"rm -rf {self.work_dir}/output_matching")
 
         try:
-            os.remove(f"{output_path}/section_-01.cfg")
+            os.remove(f"{self.output_path}/section_-01.cfg")
         except FileNotFoundError:
             warn(
                 "Init config file not found anymore. "
@@ -270,7 +279,7 @@ class Case:
         except:
             raise
         try:
-            os.remove(f"{output_path}/section_-01.txt")
+            os.remove(f"{self.output_path}/section_-01.txt")
         except FileNotFoundError:
             warn("Init prescribed geometry file not found anymore.")
         except:
@@ -281,8 +290,8 @@ class Case:
         if self.auto_concatenate:
 
             list_to_concat = [
-                cfg.ReadUserInput(f"{output_path}/{file}")
-                for file in sorted(os.listdir(output_path))
+                cfg.ReadUserInput(f"{self.output_path}/{file}")
+                for file in sorted(os.listdir(self.output_path))
                 if file.endswith(".cfg")
             ]
 
@@ -360,6 +369,7 @@ class Case:
                 )
 
                 cfg.WriteBladeConfigFile(open(IN["Config_Path"], "w"), IN)
+                # optim_object.match_blade(matching_mode="manual")
                 optim_object.match_blade(matching_mode="manual_sliders")
 
                 optim_object.match_blade(matching_mode="DVs")
