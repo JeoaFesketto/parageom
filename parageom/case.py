@@ -233,9 +233,9 @@ class Case:
 
 
         try:
-            os.system(f"rm -rf {output_path}")
-            os.mkdir(f"{output_path}/")
-            os.mkdir(f"{output_path}/residuals/")
+            os.system(f"rm -rf {self.output_path}")
+            os.mkdir(f"{self.output_path}/")
+            os.mkdir(f"{self.output_path}/residuals/")
         except:
             pass
 
