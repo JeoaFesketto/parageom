@@ -19,19 +19,22 @@ class Case:
     DIR = os.getcwd()
 
     defaults = {
-        "optimization_max_iter": 300,  # max number of iterations for one section
-        "convergence_max_dev_rel": 0.4,  # values in % for the convergence criteria.
-        "convergence_mean_dev_rel": 0.1,
-        "scale_factor": 1e-3,  # optimization works best if dims are in meters.
-        "xyz": "xyz",  # order of the coordinates in the geomTurbo file: chord, thickness, span
+        # case parameters
         "interactive": True,
         "overwrite": True,  # allow overwrite
         "auto_concatenate": True,
         "on_hpc": False,  # will force interactive off and overwrite on
-        # advanced parameters.
-        "uv_optim_method": "L-BFGS-B",  # check scipy doc for optimization methods.
-        "dv_optim_method": "SLSQP",
-        "max_retries_slsqp": 1,
+        # geomTurbo parameters
+        "scale_factor": 1e-3,  # optimization works best if dims are in meters.
+        "xyz": "xyz",  # order of the coordinates in the geomTurbo file: chord, thickness, span
+        # optimization parameters
+        "optim_max_iter": 300,  # max number of iterations for one section
+        "optim_convergence_max_dev_rel": 0.4,  # values in % for the convergence criteria.
+        "optim_convergence_mean_dev_rel": 0.1,
+        # advanced optim parameters.
+        "optim_uv_method": "L-BFGS-B",  # check scipy doc for optimization methods.
+        "optim_dv_method": "SLSQP",
+        "optim_max_retries_slsqp": 1,
         "transfer_position": True,
         "transfer_angles": True,
         "fatten": False,
@@ -45,10 +48,20 @@ class Case:
         self.residuals = None
 
         for key, value in Case.defaults.items():
-            if key in kwargs and type(value) == type(kwargs[key]):
-                setattr(self, key, kwargs[key])
-            else:
+            if key in kwargs:
+                if type(value) == type(kwargs[key]):
+                    setattr(self, key, kwargs[key])
+                else:
+                    warn(
+                        f'value for `{key}` was set to `{kwargs[key]}`, '
+                        f'of type {type(kwargs[key])} '
+                        f'but should be of type {type(value)}. '
+                        'Value was still set but this might cause errors.'
+                    )
+                    setattr(self, key, kwargs[key])
+            elif key not in kwargs:
                 setattr(self, key, value)
+        
 
         if self.on_hpc:
             self.interactive = False
@@ -57,7 +70,7 @@ class Case:
         for key in kwargs:
             if key not in Case.defaults:
                 warn(f"`{key}` is not an option and will be ignored.")
-
+            
         self.geomTurbo = From_geomTurbo(geomTurbo_file, self.scale_factor, xyz=self.xyz)
 
         try:
@@ -200,12 +213,11 @@ class Case:
             coarseness=1,
             plot_options=plot_options,
             _output_path=f"{Case.DIR}/{self.work_dir}",
-            _optimization_max_iter=self.optimization_max_iter,
-            _convergence_max_dev_rel=self.convergence_max_dev_rel,
-            _convergence_mean_dev_rel=self.convergence_mean_dev_rel,
-            _uv_optim_method=self.uv_optim_method,
-            _dv_optim_method=self.dv_optim_method,
-            _max_retries_slsqp=self.max_retries_slsqp,
+            **{
+                f'_{key}': getattr(self, key) 
+                for key in Case.defaults 
+                if key.startswith('optim')
+            }
         )
 
         if self.interactive and not _match_blade:
@@ -356,12 +368,11 @@ class Case:
                     coarseness=1,
                     plot_options=plot_options,
                     _output_path=f"{Case.DIR}/{self.work_dir}",
-                    _optimization_max_iter=self.optimization_max_iter,
-                    _convergence_max_dev_rel=self.convergence_max_dev_rel,
-                    _convergence_mean_dev_rel=self.convergence_mean_dev_rel,
-                    _uv_optim_method=self.uv_optim_method,
-                    _dv_optim_method=self.dv_optim_method,
-                    _max_retries_slsqp=self.max_retries_slsqp,
+                    **{
+                        f'_{key}': getattr(self, key) 
+                        for key in Case.defaults 
+                        if key.startswith('optim')
+                    }
                 )
 
                 cfg.WriteBladeConfigFile(open(IN["Config_Path"], "w"), IN)
@@ -452,12 +463,11 @@ class Case:
             coarseness=1,
             plot_options=plot_options,
             _output_path=f"{Case.DIR}/{self.work_dir}",
-            _optimization_max_iter=self.optimization_max_iter,
-            _convergence_max_dev_rel=self.convergence_max_dev_rel,
-            _convergence_mean_dev_rel=self.convergence_mean_dev_rel,
-            _uv_optim_method=self.uv_optim_method,
-            _dv_optim_method=self.dv_optim_method,
-            _max_retries_slsqp=self.max_retries_slsqp,
+            **{
+                f'_{key}': getattr(self, key) 
+                for key in Case.defaults 
+                if key.startswith('optim')
+            }
         )
         o.match_blade("DVs")
         # TODO finish copying the file back to where it needs to be
