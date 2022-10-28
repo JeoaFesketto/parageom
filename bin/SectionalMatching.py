@@ -37,7 +37,7 @@ parser.add_argument(
     type=str,
 )
 parser.add_argument(
-    "-h",
+    "-p",
     "--on_hpc",
     help="Flag to run non-interactively. Can also be defined inside of init.json.",
     action="count",
