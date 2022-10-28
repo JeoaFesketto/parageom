@@ -157,6 +157,7 @@ class Case:
                 _no_subfolder=True,
             )
             optim_object.match_blade(matching_mode="manual")
+            optim_object.match_blade(matching_mode="manual_sliders")
 
         IN = cfg.ReadUserInput(IN["Config_Path"])
         cfg.DeScale(IN, True)
@@ -400,7 +401,6 @@ class Case:
                 os.system(f"rm -rf {self.work_dir}/output_matching")
 
         answer = ""
-        print(modded)
         while answer not in ["y", "n", "yes", "no"]:
             answer = input("\n\n\tOverwrite with new cfg files? \ny/n:\t\t")
 
