@@ -2,8 +2,8 @@ from parageom.rotor import Rotor
 from parageom.reader import From_geomTurbo
 
 
-def make_section(INFile, OUTFile = './tmp.txt', section = 0):
-    
+def make_section(INFile, OUTFile="./tmp.txt", section=0):
+
     """
     Write a parablade point cloud file to `OUTFile` from the blade section `section` of a sectioned .geomTurbo file.
 
@@ -27,4 +27,4 @@ def make_section(INFile, OUTFile = './tmp.txt', section = 0):
     """
 
     rotor = Rotor(From_geomTurbo(INFile, init="sectioned"))
-    rotor.parablade_section_export(section, file = OUTFile, scale_factor = 1e-3, dim='3D')
+    rotor.parablade_section_export(section, file=OUTFile, scale_factor=1e-3, dim="3D")

@@ -58,21 +58,23 @@ class Rotor:
                     for i in range(self.N_sections)
                 ]
             )
-        
+
         self.scale_factor = Initializer_object.scale_factor
 
-    def parablade_section_export(
-        self, section_idx, file=None, dim="2D", is_new=True
-    ):
+    def parablade_section_export(self, section_idx, file=None, dim="2D", is_new=True):
 
         """
         Writes the point cloud of a section to a txt file
         """
 
-        section = self.section_coordinates[section_idx]*self.scale_factor
+        section = self.section_coordinates[section_idx] * self.scale_factor
 
         if file is None:
-            file = "./confidential/blade.txt" if dim == "2D" else "./confidential/3Dblade.txt"
+            file = (
+                "./confidential/blade.txt"
+                if dim == "2D"
+                else "./confidential/3Dblade.txt"
+            )
 
         mode = "w" if is_new else "a"
         with open(file, mode) as f:
@@ -92,23 +94,23 @@ class Rotor:
                 )
 
         print(f"Done exporting to {file}")
-    
-    def parablade_blade_export(
-        self, file = None, iterator = None
-    ):
+
+    def parablade_blade_export(self, file=None, iterator=None):
 
         """
         Writes the point cloud of the 3D blade to a txt file
         """
 
-        iterator = np.array(np.linspace(0, 180, 10), dtype = 'int') if iterator is None else iterator
-        
-        self.parablade_section_export(iterator[0], file = file, dim = "3D")
+        iterator = (
+            np.array(np.linspace(0, 180, 10), dtype="int")
+            if iterator is None
+            else iterator
+        )
+
+        self.parablade_section_export(iterator[0], file=file, dim="3D")
 
         for i in iterator[1:]:
-            self.parablade_section_export(i, file = file, dim = "3D", is_new=False)
-
-
+            self.parablade_section_export(i, file=file, dim="3D", is_new=False)
 
     def plot_section(self, section_idx):
 
@@ -126,13 +128,3 @@ class Rotor:
 
         plt.show()
 
-
-if __name__ == "__main__":
-    o = Rotor(From_geomTurbo("./confidential/DGEN_geom/rotor_sections.geomTurbo", init="sectioned"))
-    o.parablade_blade_export(
-        file = '/home/daep/j.fesquet/git_repos/parablade/testing/for_pando/dual_section.txt',
-        iterator=[0, -1]
-    )
-    # for i in np.array(np.linspace(0, 180, 10), dtype = 'int'):
-        # o.parablade_section_export(i, dim = "3D", normalize=False)
-    # o.parablade_section_export(0, file = 'dgen_base.txt', dim = '2D', normalize=False)

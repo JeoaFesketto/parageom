@@ -23,14 +23,12 @@ class Case:
         "convergence_max_dev_rel": 0.4,  # values in % for the convergence criteria.
         "convergence_mean_dev_rel": 0.1,
         "scale_factor": 1e-3,  # optimization works best if dims are in meters.
-        "xyz": "xyz", # order of the coordinates in the geomTurbo file: chord, thickness, span
+        "xyz": "xyz",  # order of the coordinates in the geomTurbo file: chord, thickness, span
         "interactive": True,
         "overwrite": True,  # allow overwrite
         "auto_concatenate": True,
         "on_hpc": False,  # will force interactive off and overwrite on
-        
         # advanced parameters.
-
         "uv_optim_method": "L-BFGS-B",  # check scipy doc for optimization methods.
         "dv_optim_method": "SLSQP",
         "max_retries_slsqp": 1,
@@ -102,7 +100,7 @@ class Case:
         if template is not None:
             pass
         elif "init.cfg" in os.listdir(self.work_dir):
-            template = f'{self.work_dir}/init.cfg'
+            template = f"{self.work_dir}/init.cfg"
         elif self.interactive:
             template = input(
                 "\nChoose blade type:\n\t0 for compressor\n\t1 for turbine\n\nSelected type:\t"
@@ -147,7 +145,7 @@ class Case:
             )
             optim_object.match_blade(matching_mode="manual")
 
-        IN = cfg.ReadUserInput(IN['Config_Path'])
+        IN = cfg.ReadUserInput(IN["Config_Path"])
         cfg.DeScale(IN, True)
         cfg.WriteBladeConfigFile(open(IN["Config_Path"], "w"), IN)
 
@@ -222,15 +220,13 @@ class Case:
         if init_config_file is None:
             if self.init_config_path is not None:
                 init_config_file = self.init_config_path
-            elif 'init.cfg' in os.listdir(self.work_dir):
-                init_config_file = f'{self.work_dir}/init.cfg'
+            elif "init.cfg" in os.listdir(self.work_dir):
+                init_config_file = f"{self.work_dir}/init.cfg"
                 self.init_config_path = init_config_file
             else:
                 raise ValueError(
-                    'Init config file not specified and not '
-                    'found in object.'
+                    "Init config file not specified and not " "found in object."
                 )
-
 
         try:
             os.system(f"rm -rf {self.output_path}")
@@ -413,30 +409,46 @@ class Case:
         points = []
 
         for file in os.listdir(self.output_path):
-            if file.endswith('.txt'):
-                points.append(np.loadtxt(f'{self.output_path}/{file}'))
-        
+            if file.endswith(".txt"):
+                points.append(np.loadtxt(f"{self.output_path}/{file}"))
+
         final = np.stack(tuple(points), axis=0)
         final = final.reshape((-1, 4))
         final = final[:, [0, 3, 2, 1]]
-        np.savetxt(f'{self.work_dir}/3D_points.txt', final, delimiter='\t')
-        
-        file = [file for file in os.listdir(self.work_dir) if file.endswith('parametrized.cfg')][0]
+        np.savetxt(f"{self.work_dir}/3D_points.txt", final, delimiter="\t")
 
-        IN = cfg.ReadUserInput(f'{self.work_dir}/{file}')
-        cfg.Scale(IN, scale= self.scale_factor, in_place=True)
-        IN['N_SECTIONS']=[len(points)]
-        IN['PRESCRIBED_BLADE_FILENAME']=f'{self.work_dir}/3D_points.txt'
-        IN['Config_Path']=f'{self.work_dir}/3D_parametrized.cfg'
-        cfg.WriteBladeConfigFile(open(IN['Config_Path'], 'w'), IN)
+        file = [
+            file
+            for file in os.listdir(self.work_dir)
+            if file.endswith("parametrized.cfg")
+        ][0]
+
+        IN = cfg.ReadUserInput(f"{self.work_dir}/{file}")
+        cfg.Scale(IN, scale=self.scale_factor, in_place=True)
+        IN["N_SECTIONS"] = [len(points)]
+        IN["PRESCRIBED_BLADE_FILENAME"] = f"{self.work_dir}/3D_points.txt"
+        IN["Config_Path"] = f"{self.work_dir}/3D_parametrized.cfg"
+        cfg.WriteBladeConfigFile(open(IN["Config_Path"], "w"), IN)
 
         if self.interactive:
-            plot_options={ "view_xy": "yes","view_xR": "no","view_yz": "no","view_3D": "no","error_distribution": "no" }
+            plot_options = {
+                "view_xy": "yes",
+                "view_xR": "no",
+                "view_yz": "no",
+                "view_3D": "no",
+                "error_distribution": "no",
+            }
         else:
-            plot_options={ "view_xy": "no","view_xR": "no","view_yz": "no","view_3D": "no","error_distribution": "no" }
+            plot_options = {
+                "view_xy": "no",
+                "view_xR": "no",
+                "view_yz": "no",
+                "view_3D": "no",
+                "error_distribution": "no",
+            }
 
         o = BladeMatch(
-            IN, 
+            IN,
             coarseness=1,
             plot_options=plot_options,
             _output_path=f"{Case.DIR}/{self.work_dir}",
@@ -447,7 +459,7 @@ class Case:
             _dv_optim_method=self.dv_optim_method,
             _max_retries_slsqp=self.max_retries_slsqp,
         )
-        o.match_blade('DVs')
+        o.match_blade("DVs")
         # TODO finish copying the file back to where it needs to be
         # sh.copy(f'{self.work_dir}/output_matching/')
 

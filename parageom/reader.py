@@ -4,14 +4,13 @@ import parablade as pb
 from geomdl import BSpline
 
 
-
 class From_geomTurbo:
-    def __init__(self, file, scale_factor=1, init="sectioned", xyz='xyz'):
+    def __init__(self, file, scale_factor=1, init="sectioned", xyz="xyz"):
 
         self.file_path = file
-        self.filename = file.split('/')[-1][:-10]
+        self.filename = file.split("/")[-1][:-10]
         self.scale_factor = scale_factor
-        self.xyz=xyz
+        self.xyz = xyz
         self.rotor_points = None
         self.parameters = None
         self.surfaces = None
@@ -109,9 +108,9 @@ class From_geomTurbo:
 
         with open(file, "r") as f:
             raw_content = f.readlines()
-        
-        N_sections = int(''.join(raw_content).split('\n')[7])
-        N_points = int(''.join(raw_content).split('\n')[10])
+
+        N_sections = int("".join(raw_content).split("\n")[7])
+        N_points = int("".join(raw_content).split("\n")[10])
 
         content = "".join(raw_content).replace(
             f"pressure\nSECTIONAL\n{N_sections}\n", ""
@@ -135,9 +134,11 @@ class From_geomTurbo:
             (2, N_sections, N_points, 3)
         )
 
-        if self.xyz!='xyz':
-            xyz = self.xyz.replace('x', '0').replace('y', '1').replace('z', '2')
-            self.rotor_points = self.rotor_points[..., [int(xyz[0]), int(xyz[1]), int(xyz[2])]]
+        if self.xyz != "xyz":
+            xyz = self.xyz.replace("x", "0").replace("y", "1").replace("z", "2")
+            self.rotor_points = self.rotor_points[
+                ..., [int(xyz[0]), int(xyz[1]), int(xyz[2])]
+            ]
 
 
 class From_param_2D:
@@ -268,7 +269,7 @@ class From_param_3D:
         # the array is expanded by N_le-1 points actually...
 
         tmp = point_cloud
-        final_array = np.zeros((tmp.shape[0], 2, tmp.shape[2] + N_le-1, 3))
+        final_array = np.zeros((tmp.shape[0], 2, tmp.shape[2] + N_le - 1, 3))
 
         for k, section in enumerate(tmp):
 
@@ -290,9 +291,9 @@ class From_param_3D:
             if np.min(_angle(tangent_vectors, le - section[:, i])) < min_angle:
                 j = 1
                 while (
-                    np.min(_angle(
-                        tangent_vectors, _centre(*section[:, j]) - section[:, i]
-                    ))
+                    np.min(
+                        _angle(tangent_vectors, _centre(*section[:, j]) - section[:, i])
+                    )
                     < min_angle
                 ):
                     j += 1
@@ -314,13 +315,16 @@ class From_param_3D:
             suction_curve.delta = 1 / (N_le + i)
             pressure_curve.delta = 1 / (N_le + i)
 
+            new_head = np.array(
+                [
+                    np.flip(suction_curve.evalpts, axis=0),
+                    np.flip(pressure_curve.evalpts, axis=0),
+                ]
+            )
 
-            new_head = np.array([np.flip(suction_curve.evalpts, axis = 0), np.flip(pressure_curve.evalpts, axis = 0)])
+            final_array[k, :] = np.concatenate((new_head, tmp[k, :, i + 1 :]), axis=1)
 
-            final_array[k, :] = np.concatenate((new_head, tmp[k, :, i+1:]), axis=1)
-            
-
-        self.N_points += 2 * (N_le-1)
+        self.N_points += 2 * (N_le - 1)
         return final_array
 
     def _TE_fillet(self, point_cloud, N_te=80, min_width=0.5, min_angle=np.deg2rad(6)):
@@ -364,9 +368,11 @@ class From_param_3D:
             if np.min(_angle(tangent_vectors, te - section[:, -i])) < min_angle:
                 j = 1
                 while (
-                    np.min(_angle(
-                        tangent_vectors, _centre(*section[:, -j]) - section[:, -i]
-                    ))
+                    np.min(
+                        _angle(
+                            tangent_vectors, _centre(*section[:, -j]) - section[:, -i]
+                        )
+                    )
                     < min_angle
                 ):
                     j += 1
@@ -421,12 +427,15 @@ class From_param_3D:
 
         with open(filename, "w") as f:
             f.write("\n".join(lines))
-            f.write("\n") # don't remove it
+            f.write("\n")  # don't remove it
+
 
 # Functions used in _LE_fillet and _TE_fillet.
 
+
 def _dist(p1, p2):
     return np.linalg.norm(p2 - p1)
+
 
 def _angle(v1, v2):
     """
@@ -434,12 +443,15 @@ def _angle(v1, v2):
     Returns:
         numpy.ndarray of shape N_vectors
     """
-    return np.arccos(np.diag(
-                np.tensordot(v1, v2, axes = [1, 1])) / (np.linalg.norm(v1, axis = 1) * np.linalg.norm(v2, axis = 1)
-            ))
+    return np.arccos(
+        np.diag(np.tensordot(v1, v2, axes=[1, 1]))
+        / (np.linalg.norm(v1, axis=1) * np.linalg.norm(v2, axis=1))
+    )
+
 
 def _centre(p1, p2):
     return p1 + (p2 - p1) / 2
+
 
 def _get_intersect(p1, p2, v1, n):
     n_hat = n / np.linalg.norm(n)

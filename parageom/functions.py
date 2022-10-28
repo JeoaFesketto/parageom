@@ -7,23 +7,35 @@ import numpy as np
 
 import parablade.init_files.path as pb_path
 from parablade.blade_match import BladeMatch
-from parablade.common.config import ReadUserInput, WriteBladeConfigFile, ConfigPasser, Scale, DeScale, Position, Angles, ConcatenateConfig
+from parablade.common.config import (
+    ReadUserInput,
+    WriteBladeConfigFile,
+    ConfigPasser,
+    Scale,
+    DeScale,
+    Position,
+    Angles,
+    ConcatenateConfig,
+)
 
 from parageom.reader import From_param_3D, From_geomTurbo
 from parageom.rotor import Rotor
 import shutil as sh
 
 
-
 # This file has a functional version of all the scripts available in bin/
 def make_geomTurbo(
-    config_file, output_folder="output_geometry/", N_sections=181, N_points=362,
-    LE_fillet=False, TE_fillet=False
+    config_file,
+    output_folder="output_geometry/",
+    N_sections=181,
+    N_points=362,
+    LE_fillet=False,
+    TE_fillet=False,
 ):
     DIR = os.getcwd() + "/"
 
     t = time.time()
-    
+
     if not output_folder.endswith("/"):
         output_folder += "/"
 
@@ -32,7 +44,7 @@ def make_geomTurbo(
     except:
         print("Writing to existing folder, files might have been overwriten.")
 
-    IN = ConfigPasser(DIR+config_file)
+    IN = ConfigPasser(DIR + config_file)
     DeScale(IN, in_place=True)
 
     blade = From_param_3D(IN, N_sections=N_sections, N_points=N_points)
@@ -41,7 +53,9 @@ def make_geomTurbo(
         LE_fillet,
         TE_fillet,
     )
-    print('This was generated in %(my_time).5f seconds\n' % {'my_time': time.time() - t})
+    print(
+        "This was generated in %(my_time).5f seconds\n" % {"my_time": time.time() - t}
+    )
 
 
 def show_section(*geomTurbo_files, span_percentage=0, _3Dimensional=False):
@@ -85,53 +99,61 @@ def show_section(*geomTurbo_files, span_percentage=0, _3Dimensional=False):
 
     plt.show()
 
+
 def _le_section_getter(le_points, span_percentage):
-    target = (le_points[-1]-le_points[0])*(span_percentage*0.01)+le_points[0]
-    prev = np.linalg.norm(le_points[0]-target)
+    target = (le_points[-1] - le_points[0]) * (span_percentage * 0.01) + le_points[0]
+    prev = np.linalg.norm(le_points[0] - target)
     i = 1
-    while prev > np.linalg.norm(le_points[i]-target):
-        prev = np.linalg.norm(le_points[i]-target)
-        i+=1
+    while prev > np.linalg.norm(le_points[i] - target):
+        prev = np.linalg.norm(le_points[i] - target)
+        i += 1
         if i == le_points.shape[0]:
             break
-    return i-1
+    return i - 1
+
 
 # DEPRECATED FUNCTIONS:
 
-def full_match(
-    geomTurbo_file, work_folder, N_sections
-):
-    raise DeprecationWarning(
-        'This is deprecated. Use available methods in `case.py` instead.'
-    )
-    initialise_match(geomTurbo_file, work_folder, mode='manual')
-    match_blade(
-        geomTurbo_file, work_folder+'/init.cfg', output_folder=work_folder+'/blade_match_output/', N_sections=N_sections
-    )
-    concatenate_to_blade('blade_match_output', work_folder=work_folder)
 
-def concatenate_to_blade(folder, work_folder = '.'):
+def full_match(geomTurbo_file, work_folder, N_sections):
+    raise DeprecationWarning(
+        "This is deprecated. Use available methods in `case.py` instead."
+    )
+    initialise_match(geomTurbo_file, work_folder, mode="manual")
+    match_blade(
+        geomTurbo_file,
+        work_folder + "/init.cfg",
+        output_folder=work_folder + "/blade_match_output/",
+        N_sections=N_sections,
+    )
+    concatenate_to_blade("blade_match_output", work_folder=work_folder)
+
+
+def concatenate_to_blade(folder, work_folder="."):
     try:
-        os.rename(work_folder+'/'+folder+'/section_-01.cfg', work_folder+'/'+folder+'/section_-01.old_cfg')
+        os.rename(
+            work_folder + "/" + folder + "/section_-01.cfg",
+            work_folder + "/" + folder + "/section_-01.old_cfg",
+        )
     except:
         print(
-            '\nInit config file could not be found, it might have gotten concatenated accidentally.\nCheck number of parameters in concatenated file.'
+            "\nInit config file could not be found, it might have gotten concatenated accidentally.\nCheck number of parameters in concatenated file."
         )
 
     list_to_concat = [
-        ReadUserInput(work_folder+'/'+folder+'/'+file) for file
-        in os.listdir(folder) if file.endswith('.cfg')
+        ReadUserInput(work_folder + "/" + folder + "/" + file)
+        for file in os.listdir(folder)
+        if file.endswith(".cfg")
     ]
     final_cfg = ConcatenateConfig(*list_to_concat)
-    final_cfg['NDIM'] = 3
-    WriteBladeConfigFile(open(work_folder+'/'+'final_output.cfg'), final_cfg)
+    final_cfg["NDIM"] = 3
+    WriteBladeConfigFile(open(work_folder + "/" + "final_output.cfg"), final_cfg)
 
 
-def initialise_match(geomTurbo_file, work_folder='', mode='manual'):
+def initialise_match(geomTurbo_file, work_folder="", mode="manual"):
 
     raise DeprecationWarning(
-        'This is deprecated, use `Case.initialise_case()` '
-        'instead.'
+        "This is deprecated, use `Case.initialise_case()` " "instead."
     )
     # DIR = os.getcwd()
     path_to_init_files = os.path.dirname(pb_path.__file__)
@@ -140,57 +162,54 @@ def initialise_match(geomTurbo_file, work_folder='', mode='manual'):
         work_folder += "/"
 
     try:
-        os.mkdir(os.getcwd() + '/' + work_folder)
+        os.mkdir(os.getcwd() + "/" + work_folder)
     except:
         print("Writing to existing folder, files might have been overwriten.")
 
-    if mode == 'manual':
+    if mode == "manual":
 
-        init = input('\nChoose blade type:\n\t0 for compressor\n\t1 for turbine\n\nSelected type:\t')
+        init = input(
+            "\nChoose blade type:\n\t0 for compressor\n\t1 for turbine\n\nSelected type:\t"
+        )
 
         if int(init):
-            sh.copy(path_to_init_files+'/turbine.cfg', work_folder+'init.cfg')
-            IN = ConfigPasser(work_folder+'init.cfg')
+            sh.copy(path_to_init_files + "/turbine.cfg", work_folder + "init.cfg")
+            IN = ConfigPasser(work_folder + "init.cfg")
 
         else:
-            sh.copy(path_to_init_files+'/compressor.cfg', work_folder+'init.cfg')
-            IN = ConfigPasser(work_folder+'init.cfg')
+            sh.copy(path_to_init_files + "/compressor.cfg", work_folder + "init.cfg")
+            IN = ConfigPasser(work_folder + "init.cfg")
 
-        geomTurbo = From_geomTurbo(geomTurbo_file, 'sectioned')
+        geomTurbo = From_geomTurbo(geomTurbo_file, "sectioned")
         le = geomTurbo.rotor_points[0, 0, 0]
         te = geomTurbo.rotor_points[0, 0, -1]
         Position(IN, le, te, in_place=True)
         Angles(IN, le, te, in_place=True)
-        WriteBladeConfigFile(open(work_folder+'init.cfg', 'w'), IN)
-    
+        WriteBladeConfigFile(open(work_folder + "init.cfg", "w"), IN)
+
         match_section(
-            geomTurbo_file,
-            work_folder+'init.cfg',
-            output_folder=work_folder
+            geomTurbo_file, work_folder + "init.cfg", output_folder=work_folder
         )
 
 
 def _le_lin_sampler(le_points, d_min):
     indeces = [0]
     last = le_points[0]
-    limit = (d_min*0.01)*np.sum(np.linalg.norm(le_points[1:]-le_points[:-1], axis=1))
+    limit = (d_min * 0.01) * np.sum(
+        np.linalg.norm(le_points[1:] - le_points[:-1], axis=1)
+    )
     for i in range(1, le_points.shape[0]):
-        if np.linalg.norm(le_points[i]-last) > limit:
+        if np.linalg.norm(le_points[i] - last) > limit:
             last = le_points[i]
             indeces.append(i)
-    indeces.append(le_points.shape[0]-1)
+    indeces.append(le_points.shape[0] - 1)
     return np.array(indeces)
-
-
 
 
 def match_blade(
     geomTurbo_file, init_config_file, output_folder="blade_match_output/", N_sections=30
 ):
-    raise DeprecationWarning(
-        'This is deprecated, use `Case.match_blade` '
-        'instead.'
-    )
+    raise DeprecationWarning("This is deprecated, use `Case.match_blade` " "instead.")
 
     DIR = os.getcwd() + "/"
 
@@ -209,7 +228,7 @@ def match_blade(
     le_points = geomTurbo.rotor_points[0, :, 0]
 
     # change this to be able to linearly space the sections geometrically.
-    sections = _le_lin_sampler(le_points, 100/(N_sections-1))
+    sections = _le_lin_sampler(le_points, 100 / (N_sections - 1))
 
     sh.copy(init_config_file, f"{DIR+output_folder}section_-01.cfg")
 
@@ -234,10 +253,7 @@ def match_blade(
 def match_section(
     geomTurbo_file, config_file, output_folder="section_match_output/", section_index=0
 ):
-    raise DeprecationWarning(
-        'This is deprecated, use `Case.match_section` '
-        'instead.'
-    )
+    raise DeprecationWarning("This is deprecated, use `Case.match_section` " "instead.")
     DIR = os.getcwd() + "/"
 
     if not output_folder.endswith("/"):
@@ -263,12 +279,10 @@ def match_section(
     IN["PRESCRIBED_BLADE_FILENAME"] = (
         DIR + output_folder + f'{config_file.split("/")[-1][:-3]}txt'
     )
-    if 'SCALE_FACTOR' in IN and IN['SCALE_FACTOR'] != rotor.scale_factor:
+    if "SCALE_FACTOR" in IN and IN["SCALE_FACTOR"] != rotor.scale_factor:
         IN = Scale(IN, scale=rotor.scale_factor, in_place=True)
-    elif 'SCALE_FACTOR' not in IN:
+    elif "SCALE_FACTOR" not in IN:
         IN = Scale(IN, scale=rotor.scale_factor, in_place=True)
-
-
 
     WriteBladeConfigFile(open(IN["Config_Path"], "w"), IN)
 
@@ -298,4 +312,3 @@ def match_section(
 
     if not sys._getframe().f_back.f_code.co_name == "initialise_match":
         matched_blade_object.match_blade(matching_mode="DVs")
-
