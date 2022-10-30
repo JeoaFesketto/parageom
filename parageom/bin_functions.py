@@ -1,5 +1,5 @@
 from parageom.rotor import Rotor
-from parageom.reader import From_geomTurbo
+from parageom.reader import GeomTurbo
 
 
 def make_section(INFile, OUTFile="./tmp.txt", section=0):
@@ -26,5 +26,5 @@ def make_section(INFile, OUTFile="./tmp.txt", section=0):
     None
     """
 
-    rotor = Rotor(From_geomTurbo(INFile, init="sectioned"))
+    rotor = Rotor(GeomTurbo(INFile, init="sectioned"))
     rotor.parablade_section_export(section, file=OUTFile, scale_factor=1e-3, dim="3D")

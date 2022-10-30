@@ -6,7 +6,7 @@ import sys
 from parablade.blade_match import BladeMatch
 from parablade.common.config import ReadUserInput, WriteBladeConfigFile, Scale
 
-from parageom.reader import From_geomTurbo
+from parageom.reader import GeomTurbo
 from parageom.rotor import Rotor
 from parageom.common import print_parageom
 
@@ -54,7 +54,7 @@ try:
 except:
     print("Writing to existing folder, files might have been overwriten.")
 
-rotor = Rotor(From_geomTurbo(args.geomTurbo_file, init="sectioned"))
+rotor = Rotor(GeomTurbo(args.geomTurbo_file, init="sectioned"))
 rotor.parablade_section_export(
     args.section_index,
     file=DIR + args.output_folder + f'{args.config_file.split("/")[-1][:-3]}txt',

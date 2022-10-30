@@ -18,7 +18,7 @@ from parablade.common.config import (
     ConcatenateConfig,
 )
 
-from parageom.reader import From_param_3D, From_geomTurbo
+from parageom.reader import Param_3D, GeomTurbo
 from parageom.rotor import Rotor
 import shutil as sh
 
@@ -47,7 +47,7 @@ def make_geomTurbo(
     IN = ConfigPasser(DIR + config_file)
     DeScale(IN, in_place=True)
 
-    blade = From_param_3D(IN, N_sections=N_sections, N_points=N_points)
+    blade = Param_3D(IN, N_sections=N_sections, N_points=N_points)
     blade.output_geomTurbo(
         DIR + output_folder + config_file.split("/")[-1][:-3] + "geomTurbo",
         LE_fillet,
@@ -67,7 +67,7 @@ def show_section(*geomTurbo_files, span_percentage=0, _3Dimensional=False):
     colors = ["red", "blue", "yellow", "orange", "green", "lime", "pink", "purple"]
 
     for i, file in enumerate(geomTurbo_files):
-        geomTurbo = From_geomTurbo(file, "sectioned")
+        geomTurbo = GeomTurbo(file, "sectioned")
         rotor = Rotor(geomTurbo)
         le_points = geomTurbo.rotor_points[0, :, 0]
         section = _le_section_getter(le_points, span_percentage)
@@ -180,7 +180,7 @@ def initialise_match(geomTurbo_file, work_folder="", mode="manual"):
             sh.copy(path_to_init_files + "/compressor.cfg", work_folder + "init.cfg")
             IN = ConfigPasser(work_folder + "init.cfg")
 
-        geomTurbo = From_geomTurbo(geomTurbo_file, "sectioned")
+        geomTurbo = GeomTurbo(geomTurbo_file, "sectioned")
         le = geomTurbo.rotor_points[0, 0, 0]
         te = geomTurbo.rotor_points[0, 0, -1]
         Position(IN, le, te, in_place=True)
@@ -224,7 +224,7 @@ def match_blade(
             raise Exception("writing to existing folder")
         os.system(f"rm -rf {DIR+output_folder}output_matching/")
 
-    geomTurbo = From_geomTurbo(geomTurbo_file, "sectioned")
+    geomTurbo = GeomTurbo(geomTurbo_file, "sectioned")
     le_points = geomTurbo.rotor_points[0, :, 0]
 
     # change this to be able to linearly space the sections geometrically.
@@ -265,7 +265,7 @@ def match_section(
         if not sys._getframe().f_back.f_code.co_name == "initialise_match":
             print("Writing to existing folder, files might have been overwriten.")
 
-    rotor = Rotor(From_geomTurbo(geomTurbo_file, init="sectioned"))
+    rotor = Rotor(GeomTurbo(geomTurbo_file, init="sectioned"))
     rotor.parablade_section_export(
         section_index,
         file=DIR + output_folder + f'{config_file.split("/")[-1][:-3]}txt',

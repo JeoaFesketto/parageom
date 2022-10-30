@@ -4,7 +4,7 @@ import parablade as pb
 from geomdl import BSpline
 
 
-class From_geomTurbo:
+class GeomTurbo:
     def __init__(self, file, scale_factor=1, init="sectioned", xyz="xyz"):
 
         self.file_path = file
@@ -173,7 +173,7 @@ class From_param_2D:
         self.rotor_edges = None
 
 
-class From_param_3D:
+class Param_3D:
     def __init__(self, file, N_sections=181, N_points=362, UV=None):
 
         """

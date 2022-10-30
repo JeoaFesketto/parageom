@@ -1,8 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from parageom.reader import From_geomTurbo, From_param_2D, From_param_3D
-
 
 class Rotor:
     """
@@ -127,4 +125,3 @@ class Rotor:
         )
 
         plt.show()
-

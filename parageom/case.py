@@ -10,7 +10,7 @@ import parablade.init_files.path as pb_path
 import parablade.common.config as cfg
 from parablade.blade_match import BladeMatch
 
-from parageom.reader import From_geomTurbo
+from parageom.reader import GeomTurbo
 from parageom.rotor import Rotor
 
 
@@ -53,15 +53,14 @@ class Case:
                     setattr(self, key, kwargs[key])
                 else:
                     warn(
-                        f'value for `{key}` was set to `{kwargs[key]}`, '
-                        f'of type {type(kwargs[key])} '
-                        f'but should be of type {type(value)}. '
-                        'Value was still set but this might cause errors.'
+                        f"value for `{key}` was set to `{kwargs[key]}`, "
+                        f"of type {type(kwargs[key])} "
+                        f"but should be of type {type(value)}. "
+                        "Value was still set but this might cause errors."
                     )
                     setattr(self, key, kwargs[key])
             elif key not in kwargs:
                 setattr(self, key, value)
-        
 
         if self.on_hpc:
             self.interactive = False
@@ -70,8 +69,8 @@ class Case:
         for key in kwargs:
             if key not in Case.defaults:
                 warn(f"`{key}` is not an option and will be ignored.")
-            
-        self.geomTurbo = From_geomTurbo(geomTurbo_file, self.scale_factor, xyz=self.xyz)
+
+        self.geomTurbo = GeomTurbo(geomTurbo_file, self.scale_factor, xyz=self.xyz)
 
         try:
             os.mkdir(f"{Case.DIR}/{work_dir}")
@@ -215,10 +214,10 @@ class Case:
             plot_options=plot_options,
             _output_path=f"{Case.DIR}/{self.work_dir}",
             **{
-                f'_{key}': getattr(self, key) 
-                for key in Case.defaults 
-                if key.startswith('optim')
-            }
+                f"_{key}": getattr(self, key)
+                for key in Case.defaults
+                if key.startswith("optim")
+            },
         )
 
         if self.interactive and not _match_blade:
@@ -370,10 +369,10 @@ class Case:
                     plot_options=plot_options,
                     _output_path=f"{Case.DIR}/{self.work_dir}",
                     **{
-                        f'_{key}': getattr(self, key) 
-                        for key in Case.defaults 
-                        if key.startswith('optim')
-                    }
+                        f"_{key}": getattr(self, key)
+                        for key in Case.defaults
+                        if key.startswith("optim")
+                    },
                 )
 
                 cfg.WriteBladeConfigFile(open(IN["Config_Path"], "w"), IN)
@@ -464,10 +463,10 @@ class Case:
             plot_options=plot_options,
             _output_path=f"{Case.DIR}/{self.work_dir}",
             **{
-                f'_{key}': getattr(self, key) 
-                for key in Case.defaults 
-                if key.startswith('optim')
-            }
+                f"_{key}": getattr(self, key)
+                for key in Case.defaults
+                if key.startswith("optim")
+            },
         )
         o.match_blade("DVs")
         # TODO finish copying the file back to where it needs to be
