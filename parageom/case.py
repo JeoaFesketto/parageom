@@ -16,6 +16,64 @@ from parageom.rotor import Rotor
 
 class Case:
 
+    """
+    `Case` object for matching blade geometries with various parameters.
+
+    Parameters
+    ----------
+    work_dir : string
+        Relative path of the directory from wich to take inputs or, alternatively to be created.
+        If the directory already exists and an init.cfg file is inside it, it will be used as the init
+        file where required. 
+        If the directory does not exist, it will be created and the required files will be written inside.
+    geomTurbo_file : string
+        Path to the .geomTurbo file that contains the geometry from which to make the parablade setions.
+        The .geomTurbo must be a sectioned one ie. created in Autogrid directly by outputting the geometry of the 
+        rotor.
+
+    Returns
+    -------
+    out : Case
+        `Case` object from which a geometry can be matched.
+
+    Other Parameters
+    ----------------
+    **kwargs : dict , optional
+        Advanced options for blade matching methods.
+        interactive :       require, or not, the user to take actions during code execution (including closing plots).
+                            Therefore, if this is off, no graphs will be outputted. This option is forced off when
+                            `on_hpc` is on. Default: True
+        overwrite :         allow overwriting of files when writing results. If this is off, and oerwriting is required,
+                            the code will raise an error. Default: True
+        auto_concatenate :  automatically concatenate the resulting cfg files of each section. Default: True
+        on_hpc :            for running the code on an hpc, will silence the `interactive` option and force `overwrite`
+                            off. Default: False
+        scale_factor :      set the scale factor to that of the .geomTurbo file. eg: 1e-3 for mm. Default: 1e-3
+        xyz :               coordinates reordering for the optimization process if necessary. eg: 'zyx', 'xzy', etc...
+                            Default: 'xyz'
+        optim_max_iter :    max number of iterations during optimization. Number will be increased if retries are
+                            necessary. Default: 300
+        optim_convergence_max_dev_rel :
+                            threshold for the maximum relative deviation between the prescribed and the matched point
+                            clouds before optimization is stopped. Default: 0.4
+        optim_convergence_mean_dev_rel :
+                            threshold for the mean relative deviation between the prescribed and the matched point
+                            clouds before optimization is stopped. Default: 0.1
+        optim_uv_method :   method to be used for uv optimization. Check `scipy.optimize.minimize` documentation.
+                            Default: 'L-BFGS-B'
+        optim_dv_method :   method to be used for design variables optimization. Check `scipy.optimize.minimize` 
+                            documentation. Default: 'SLSQP'
+        optim_max_retries_slsqp:
+                            number of times the optimization is allowed to retry after exiting due to code 4: 
+                            incompatible inequality constraints, when running slsqp. Default: 1
+        transfer_position : automatically set the position of the leading and trailing edges of in the cfg file based
+                            on the coordinates from the .geomTurbo file. This will also adapt the stagger angle to
+                            match the trailing edge y coordinate. Default: True
+        fatten :            fatten the blade profile in the cfg file when initialising for a section. Turn this on in
+                            case the optimization yields bad results. Default: False
+    
+    """
+
     DIR = os.getcwd()
 
     defaults = {
@@ -36,7 +94,6 @@ class Case:
         "optim_dv_method": "SLSQP",
         "optim_max_retries_slsqp": 1,
         "transfer_position": True,
-        "transfer_angles": True,
         "fatten": False,
     }
 
@@ -44,7 +101,7 @@ class Case:
 
         self.work_dir = work_dir
         self.output_path = f"{self.work_dir}/blade_match_output"
-        self.init_config_path = None
+        self.init_config_file = None
         self.residuals = None
 
         for key, value in Case.defaults.items():
@@ -106,6 +163,20 @@ class Case:
                 raise
 
     def initialise_case(self, template=None):
+        """
+        Method to initialise a `Case` ie. create the init .cfg file to be used for the optimization process.
+        If `Case.interactive` is True, the user will be prompted for manual blade matching.
+        It writes a .cfg file to the `Case.work_dir` directory from which to start the matching process.
+
+        Parameters
+        ----------
+        template : None, int or string
+            Template on which to base the initialization .cfg file. This can be the path to a .cfg file as a string, a
+            string, an int to specify one of the presets or None. If `template` is None, the method will look for a
+            file specificaly named `init.cfg` in the working directory specified when initialising the case object with
+            `work_dir`. Else and if `Case.interactive` is True, the user will be prompted to select one of the possible
+            presets available in the parablade.init_files directory.
+        """
 
         init_f_path = os.path.dirname(pb_path.__file__)
 
@@ -162,9 +233,30 @@ class Case:
         cfg.DeScale(IN, True)
         cfg.WriteBladeConfigFile(open(IN["Config_Path"], "w"), IN)
 
-        self.init_config_path = IN["Config_Path"]
+        self.init_config_file = IN["Config_Path"]
 
     def match_section(self, config_file, section_idx, _match_blade=False):
+
+        """
+        Outputs a config file that corresponds to a specified section of the `Case.geomTurbo_file` geometry file from a
+        initial config file `config_file`.
+
+        Parameters
+        ----------
+        config_file : string
+            Relative path to a config file to be used to initialise the optimization process.
+        section_idx : int
+            Index corresponding to that inside the geomTurbo file to be matched.
+
+        Returns
+        -------
+        None
+
+        Other Parameters
+        ----------------
+        _match_blade : bool, optional
+            Not for user. Set to True if called inside `Case.match_blade`.
+        """
 
         IN = cfg.ReadUserInput(config_file)
         name = config_file.split("/")[-1][:-4]
@@ -176,7 +268,6 @@ class Case:
                 self.output_path,
                 section_idx,
                 self.transfer_position,
-                self.transfer_angles,
                 name,
             )
         else:
@@ -186,7 +277,6 @@ class Case:
                 self.output_path,
                 section_idx,
                 self.transfer_position,
-                self.transfer_angles,
                 self.fatten,
                 name,
             )
@@ -229,17 +319,22 @@ class Case:
 
     def match_blade(self, init_config_file=None, N_sections=5):
 
+        """
+         
+        """
+
         if init_config_file is None:
-            if self.init_config_path is not None:
-                init_config_file = self.init_config_path
+            if self.init_config_file is not None:
+                init_config_file = self.init_config_file
             elif "init.cfg" in os.listdir(self.work_dir):
                 init_config_file = f"{self.work_dir}/init.cfg"
-                self.init_config_path = init_config_file
+                self.init_config_file = init_config_file
             else:
                 raise ValueError(
                     "Init config file not specified and not " "found in object."
                 )
 
+        # TODO change this try, it's unacceptable
         try:
             os.system(f"rm -rf {self.output_path}")
             os.mkdir(f"{self.output_path}/")
@@ -315,7 +410,7 @@ class Case:
             )
 
     def refine(self, mean_deviation_threshold, max_deviation_threshold):
-        """This function allows the user to refine the sections that are not well converged enough."""
+        """This method allows the user to refine the sections that are not well converged enough."""
 
         if not self.interactive:
             raise NotImplementedError()
@@ -350,7 +445,6 @@ class Case:
                     self.output_path,
                     geomTurbo_sections[i],
                     self.transfer_position,
-                    self.transfer_angles,
                     self.fatten,
                     name=f"new_section_{i:03d}",
                 )
@@ -503,20 +597,16 @@ def _initialise_cfg(
     output_path,
     section_idx,
     transfer_position=True,
-    transfer_angles=False,
     fatten=False,
     name=None,
 ):
 
-    if transfer_position or transfer_angles:
+    if transfer_position:
         le = geomTurbo.rotor_points[0, section_idx, 0]
         te = geomTurbo.rotor_points[0, section_idx, -1]
-        if transfer_position:
-            cfg.Position(IN, le, te, in_place=True)
-        if transfer_angles:
-            cfg.Angles(IN, le, te, in_place=True)
-        if fatten:
-            cfg.Fatten(IN, in_place=True)
+        cfg.Position(IN, le, te, in_place=True)
+    if fatten:
+        cfg.Fatten(IN, in_place=True)
 
     name = "init" if name is None else name
 
