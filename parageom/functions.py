@@ -209,7 +209,7 @@ def _le_lin_sampler(le_points, d_min):
 def match_blade(
     geomTurbo_file, init_config_file, output_folder="blade_match_output/", N_sections=30
 ):
-    raise DeprecationWarning("This is deprecated, use `Case.match_blade` " "instead.")
+    raise DeprecationWarning("This is deprecated, use `Case.match_blade` instead.")
 
     DIR = os.getcwd() + "/"
 
