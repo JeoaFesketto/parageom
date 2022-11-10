@@ -6,10 +6,10 @@ script = "autogrid_script_template.py"
 
 
 default_options = {
-    '_CASE_NAME_': '\'case\'',
-    '_TEMPLATE_': '\'/scratch/daep/j.fesquet/r37_del_later/bs.trb\'',
-    '_GEOMTURBO_': '\'/scratch/daep/j.fesquet/rotor_DGEN_5.geomTurbo\'',
-    '_OUTPUT_DIR_': '\'/scratch/daep/j.fesquet/r37_del_later/test/\'',
+    '_CASE_NAME_': 'case',
+    '_TEMPLATE_': '/scratch/daep/j.fesquet/r37_del_later/bs.trb',
+    '_GEOMTURBO_': '/scratch/daep/j.fesquet/rotor_DGEN_5.geomTurbo',
+    '_OUTPUT_DIR_': '/scratch/daep/j.fesquet/r37_del_later/test/',
 }
 
 def make_ag_script(options, script_output_file='ag_script.py'):
@@ -20,5 +20,6 @@ def make_ag_script(options, script_output_file='ag_script.py'):
         data = data.replace(key, value)
 
     with open(script_output_file, 'w') as f: f.write(data)
+
 
 # os.system(f"igg -autogrid5 -realbatch -script {script}")
