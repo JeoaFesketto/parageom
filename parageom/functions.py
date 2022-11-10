@@ -136,7 +136,7 @@ def prepare_mesh_cfg(trb_file, *cfg, output_folder='to_run'):
 
 
         with open(f'{output_folder}/RUN.ME', 'a') as f: 
-            f.write(f"igg -autogrid5 -realbatch -script {script_output_file}\n")
+            f.write(f"igg -autogrid5 -real-batch -script {script_output_file}\n")
 
 
 # DEPRECATED FUNCTIONS:
