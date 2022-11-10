@@ -125,7 +125,7 @@ def prepare_mesh_cfg(trb_file, *cfg, output_folder='to_run'):
         mesh_output_dir = f"{output_folder}/{config_file.split('/')[-1].split('.')[0]}"
         make_output_folder(mesh_output_dir)
         options = {
-            '_CASE_NAME_': config_file.split('.')[0],
+            '_CASE_NAME_': config_file.split('/')[-1].split('.')[0],
             '_TEMPLATE_': trb_file,
             '_GEOMTURBO_': f"{DIR}/{output_folder}/{config_file.split('/')[-1][:-3]}geomTurbo",
             '_OUTPUT_DIR_': f'{DIR}/{mesh_output_dir}/'
