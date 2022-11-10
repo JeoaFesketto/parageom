@@ -1,6 +1,32 @@
-from enum import auto
 import matplotlib.pyplot as plt
 import numpy as np
+import os
+import errno
+from warnings import warn
+
+
+
+
+def make_output_folder(path, overwrite=True, warning=True):
+    DIR = os.getcwd() + "/"
+
+    if path.endswith("/"):
+        path = path[:-1]
+
+    try:
+        os.mkdir(f"{path}/")
+    except OSError as exc:
+        if exc.errno == errno.EEXIST and overwrite:
+            if warning:
+                warn(
+                    "Writing results to existing directory but `overwrite` is True, code will proceed."
+                )
+        elif exc.errno == errno.EEXIST and not overwrite:
+            raise Exception(
+                "`overwrite` is set to False and folder already exists."
+            )
+        else:
+            raise
 
 
 def _getlines(file, separator=" "):
