@@ -20,6 +20,3 @@ def make_ag_script(options, script_output_file='ag_script.py'):
         data = data.replace(key, value)
 
     with open(script_output_file, 'w') as f: f.write(data)
-
-
-# os.system(f"igg -autogrid5 -realbatch -script {script}")
