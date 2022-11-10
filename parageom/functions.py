@@ -4,6 +4,7 @@ import time
 
 import matplotlib.pyplot as plt
 import numpy as np
+import shutil as sh
 
 import parablade.init_files.path as pb_path
 from parablade.blade_match import BladeMatch
@@ -20,10 +21,12 @@ from parablade.common.config import (
 
 from parageom.reader import Param_3D, GeomTurbo
 from parageom.rotor import Rotor
-import shutil as sh
+import parageom.meshing as ms
+from parageom.common import make_output_folder
 
 
-# This file has a functional version of all the scripts available in bin/
+
+# This file stores the functions used for the scripts available in bin/
 def make_geomTurbo(
     config_file,
     output_folder="output_geometry/",
@@ -36,20 +39,14 @@ def make_geomTurbo(
 
     t = time.time()
 
-    if not output_folder.endswith("/"):
-        output_folder += "/"
-
-    try:
-        os.mkdir(DIR + output_folder)
-    except:
-        print("Writing to existing folder, files might have been overwriten.")
+    make_output_folder(output_folder, warning=False)
 
     IN = ConfigPasser(DIR + config_file)
     DeScale(IN, in_place=True)
 
     blade = Param_3D(IN, N_sections=N_sections, N_points=N_points)
     blade.output_geomTurbo(
-        DIR + output_folder + config_file.split("/")[-1][:-3] + "geomTurbo",
+        f"{DIR}/{output_folder}/{config_file.split('/')[-1][:-3]}geomTurbo",
         LE_fillet,
         TE_fillet,
     )
@@ -110,6 +107,36 @@ def _le_section_getter(le_points, span_percentage):
         if i == le_points.shape[0]:
             break
     return i - 1
+
+
+def prepare_mesh_cfg(trb_file, *cfg, output_folder='to_run'):
+
+    DIR = os.getcwd()
+
+    if output_folder.endswith("/"):
+        output_folder = output_folder[:-1]
+
+    make_output_folder(output_folder)
+
+    with open(f'{output_folder}/RUN.ME', 'w') as f: f.write('module load fine/17.1\n')
+
+    for config_file in cfg:
+        make_geomTurbo(config_file, output_folder=output_folder, N_sections=100, N_points=100)
+        mesh_output_dir = f"{output_folder}/{config_file.split('.')[0]}"
+        make_output_folder(mesh_output_dir)
+        options = {
+            '_CASE_NAME_': config_file.split('.')[0],
+            '_TEMPLATE_': trb_file,
+            '_GEOMTURBO_': f"{DIR}/{output_folder}/{config_file.split('/')[-1][:-3]}geomTurbo",
+            '_OUTPUT_DIR_': f'{DIR}/{mesh_output_dir}/'
+        }
+
+        script_output_file = f"{output_folder}/ag_script_{config_file.split('.')[0]}.py"
+        ms.make_ag_script(options, script_output_file=script_output_file)
+
+
+        with open(f'{output_folder}/RUN.ME', 'a') as f: 
+            f.write(f"igg -autogrid5 -realbatch -script {script_output_file}\n")
 
 
 # DEPRECATED FUNCTIONS:
