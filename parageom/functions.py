@@ -131,7 +131,7 @@ def prepare_mesh_cfg(trb_file, *cfg, output_folder='to_run'):
             '_OUTPUT_DIR_': f'{DIR}/{mesh_output_dir}/'
         }
 
-        script_output_file = f"{output_folder}/ag_script_{config_file.split('.')[0]}.py"
+        script_output_file = f"{output_folder}/ag_script_{config_file.split('/')[-1].split('.')[0]}.py"
         ms.make_ag_script(options, script_output_file=script_output_file)
 
 
