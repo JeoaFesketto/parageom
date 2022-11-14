@@ -48,7 +48,8 @@ class Case:
         auto_concatenate :  automatically concatenate the resulting cfg files of each section. Default: True
         on_hpc :            for running the code on an hpc, will silence the `interactive` option and force `overwrite`
                             off. Default: False
-        scale_factor :      set the scale factor to that of the .geomTurbo file. eg: 1e-3 for mm. Default: 1e-3
+        scale_factor :      set the scale factor to that of the .geomTurbo file. eg: 1e-3 for mm. 
+                            Default: 1e-3
         xyz :               coordinates reordering for the optimization process if necessary. eg: 'zyx', 'xzy', etc...
                             Default: 'xyz'
         optim_max_iter :    max number of iterations during optimization. Number will be increased if retries are
