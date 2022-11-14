@@ -4,6 +4,7 @@ import parageom.ressources.path as pg_path
 init_f_path = os.path.dirname(pg_path.__file__)
 script = "autogrid_script_template.py"
 
+# TODO make this a single file by having it inside functions.py directly.
 
 default_options = {
     '_CASE_NAME_': 'case',
