@@ -208,7 +208,7 @@ class Case:
 
         IN = cfg.ConfigPasser(f"{self.work_dir}/init.cfg")
 
-        _initialise_cfg(IN, self.geomTurbo, self.work_dir, 0, True, True)
+        _initialise_cfg(IN, self.geomTurbo, self.work_dir, 0, True)
         cfg.WriteBladeConfigFile(open(IN["Config_Path"], "w"), IN)
 
         if self.interactive:
