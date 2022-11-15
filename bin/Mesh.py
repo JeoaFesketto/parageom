@@ -40,7 +40,7 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-prepare_mesh_cfg(args.trb_file, *args.config_file, output_folder=args.output_folder)
+prepare_mesh_cfg(args.trb_file, *args.config_file, output_dir=args.output_folder)
 
 if args.mesh:
     os.system(f". {args.output_folder}/RUN.ME")
