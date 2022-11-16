@@ -86,7 +86,7 @@ class Rotor:
             elif dim == "3D":
                 f.writelines(
                     [
-                        f"{i}\t{section.T[2, i]}\t{section.T[0, i]}\t{section.T[1, i]}\n"
+                        f"{i}\t{section.T[0, i]}\t{section.T[1, i]}\t{section.T[2, i]}\n"
                         for i in range(len(section.T[0]))
                     ]
                 )
@@ -115,7 +115,7 @@ class Rotor:
         section = self.section_coordinates[section_idx]
 
         ax = plt.axes(projection="3d")
-        ax.plot3D(section.T[2], section.T[1], section.T[0], "gray")
+        ax.plot3D(section.T[0], section.T[1], section.T[2], "gray")
 
         ax.set_xlim(-100, 30)
         ax.set_zlim(0, 180)
