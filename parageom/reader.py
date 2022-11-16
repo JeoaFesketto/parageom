@@ -140,6 +140,10 @@ class GeomTurbo:
                 ..., [int(xyz[0]), int(xyz[1]), int(xyz[2])]
             ]
 
+        if self.rotor_points[0, 0, 0, 1] < 0:
+            warn('Making z coordinates positive.')
+            self.rotor_points[..., 1] *= -1
+
 
 class From_param_2D:
     def __init__(self, file, no_points=100):
