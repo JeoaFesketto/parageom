@@ -15,7 +15,6 @@ from parablade.common.config import (
     Scale,
     DeScale,
     Position,
-    Angles,
     ConcatenateConfig,
 )
 
