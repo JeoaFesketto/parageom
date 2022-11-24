@@ -58,7 +58,6 @@ rotor = Rotor(GeomTurbo(args.geomTurbo_file, init="sectioned"))
 rotor.parablade_section_export(
     args.section_index,
     file=DIR + args.output_folder + f'{args.config_file.split("/")[-1][:-3]}txt',
-    scale_factor=1e-3,
     dim="3D",
 )
 
