@@ -33,6 +33,7 @@ def make_geomTurbo(
     N_points=362,
     LE_fillet=False,
     TE_fillet=False,
+    xyz='xyz',
 ):
     DIR = os.getcwd() + "/"
 
@@ -48,6 +49,7 @@ def make_geomTurbo(
         f"{DIR}/{output_folder}/{config_file.split('/')[-1][:-3]}geomTurbo",
         LE_fillet,
         TE_fillet,
+        xyz=xyz,
     )
     print(
         "This was generated in %(my_time).5f seconds\n" % {"my_time": time.time() - t}

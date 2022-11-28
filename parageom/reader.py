@@ -210,7 +210,7 @@ class Param_3D:
         self.split_coordinates = None
 
     def output_geomTurbo(
-        self, filename="output.geomTurbo", LE_fillet=False, TE_fillet=True
+        self, filename="output.geomTurbo", LE_fillet=False, TE_fillet=True, xyz='xyz',
     ):
         """This function outputs a geomTurbo file of the blade ready to be read and used
         in autogrid.
@@ -246,7 +246,7 @@ class Param_3D:
         if TE_fillet:
             self.split_coordinates = self._TE_fillet(self.split_coordinates)
 
-        self.write_geomTurbo(filename)
+        self.write_geomTurbo(filename, xyz=xyz)
 
     def _LE_fillet(self, point_cloud, N_le=80, min_width=0.8, min_angle=np.deg2rad(15)):
         """
@@ -401,7 +401,12 @@ class Param_3D:
         self.N_points += 2 * N_te
         return final_array
 
-    def write_geomTurbo(self, filename="output.geomTurbo"):
+    def write_geomTurbo(self, filename="output.geomTurbo", xyz='xyz'):
+        
+        if xyz != "xyz":
+            xyz = xyz.replace("x", "0").replace("y", "1").replace("z", "2")
+            xyz = [int(xyz[0]), int(xyz[1]), int(xyz[2])]
+            
         lines = [
             "GEOMETRY TURBO VERSION 5",
             f"number_of_blades {int(self.N_blades[0])}",
@@ -423,7 +428,7 @@ class Param_3D:
                 for point in np.asarray(
                     np.asarray(section, dtype="float"), dtype="str"
                 ):
-                    lines.append(" ".join(point))
+                    lines.append(" ".join(point[xyz]))
 
         with open(filename, "w") as f:
             f.write("\n".join(lines))

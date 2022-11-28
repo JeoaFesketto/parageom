@@ -49,8 +49,16 @@ parser.add_argument(
     action="count",
     default=0,
 )
+parser.add_argument(
+    "-x",
+    "--coordinates_order",
+    help="Order in which the coordinates are set in the geomTurbo file. 'xyz' is default.",
+    default="xyz",
+    type=str,
+)
 
 args = parser.parse_args()
+
 
 make_geomTurbo(
     args.config_file,
@@ -59,4 +67,5 @@ make_geomTurbo(
     N_points=args.Npoints,
     LE_fillet=bool(args.LE_fillet),
     TE_fillet=bool(args.TE_fillet),
+    xyz=args.coordinates_order,
 )
