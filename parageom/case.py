@@ -48,6 +48,9 @@ class Case:
         auto_concatenate :  automatically concatenate the resulting cfg files of each section. Default: True
         on_hpc :            for running the code on an hpc, will silence the `interactive` option and force `overwrite`
                             off. Default: False
+        max_iter_section_number_optim:
+                            number of retries allowed to ensure the right number of sections will be taken. Check the
+                            `match_blade` method for more on how this is used. Default: 1000
         scale_factor :      set the scale factor to that of the .geomTurbo file. eg: 1e-3 for mm. 
                             Default: 1e-3
         xyz :               coordinates reordering for the optimization process if necessary. eg: 'zyx', 'xzy', etc...
@@ -83,6 +86,8 @@ class Case:
         "overwrite": True,  # allow overwrite
         "auto_concatenate": True,
         "on_hpc": False,  # will force interactive off and overwrite on
+        # small parameter for section number definition
+        "max_iter_section_number_optim": 1000,
         # geomTurbo parameters
         "scale_factor": 1e-3,  # optimization works best if dims are in meters.
         "xyz": "xyz",  # order of the coordinates in the geomTurbo file: chord, thickness, span
@@ -318,7 +323,7 @@ class Case:
 
         optim_object.match_blade(matching_mode="DVs")
 
-    def match_blade(self, init_config_file=None, N_sections=5):
+    def match_blade(self, init_config_file=None, N_sections=10):
 
         """
          
@@ -344,8 +349,23 @@ class Case:
             pass
 
         le_points = self.geomTurbo.rotor_points[0, :, 0]
+        
 
-        sections = _le_lin_sampler(le_points, 100 / (N_sections - 1))
+        d_min = 100 / (N_sections - 1)
+        sections = _le_lin_sampler(le_points, d_min)
+        n_iter_n_sections=self.max_iter_section_number_optim
+        
+        while sections.shape[0] != N_sections and n_iter_n_sections>0:
+            if sections.shape[0] > N_sections:
+                d_min += d_min*0.1
+                sections = _le_lin_sampler(le_points, d_min)
+                print(sections.shape)
+            else:
+                d_min -= d_min*0.1
+                sections = _le_lin_sampler(le_points, d_min)
+                print(sections.shape)
+            n_iter_n_sections-=1
+
         json.dump(
             {"geomTurbo_section_indeces": list(np.asarray(sections, dtype=float))},
             open(f"{self.work_dir}/sections.json", "w"),
