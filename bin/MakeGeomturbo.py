@@ -18,7 +18,7 @@ parser.add_argument(
     "-o",
     "--output_folder",
     help="relative path to output folder",
-    default="output_geometry/",
+    default=".",
     type=str,
 )
 parser.add_argument(
