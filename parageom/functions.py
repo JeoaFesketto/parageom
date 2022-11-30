@@ -24,7 +24,6 @@ import parageom.meshing as ms
 from parageom.common import make_output_folder
 
 
-
 # This file stores the functions used for the scripts available in bin/
 def make_geomTurbo(
     config_file,
@@ -33,7 +32,7 @@ def make_geomTurbo(
     N_points=362,
     LE_fillet=False,
     TE_fillet=False,
-    xyz='xyz',
+    xyz="xyz",
 ):
     DIR = os.getcwd() + "/"
 
@@ -65,7 +64,19 @@ def show_section(*geomTurbo_files, span_percentage=0, _3Dimensional=False):
     colors = ["red", "blue", "yellow", "orange", "green", "lime", "pink", "purple"]
 
     for i, file in enumerate(geomTurbo_files):
-        geomTurbo = GeomTurbo(file, "sectioned")
+
+        if file.endswith(".cfg"):
+            make_geomTurbo(
+                file,
+                output_folder="tmp_geomturbo",
+            )
+            geomTurbo = GeomTurbo(
+                f"tmp_geomturbo/{file.split('/')[-1].replace('.cfg', '.geomTurbo')}",
+                "sectioned",
+            )
+        else:
+            geomTurbo = GeomTurbo(file, "sectioned")
+
         rotor = Rotor(geomTurbo)
         le_points = geomTurbo.rotor_points[0, :, 0]
         section = _le_section_getter(le_points, span_percentage)
@@ -110,7 +121,7 @@ def _le_section_getter(le_points, span_percentage):
     return i - 1
 
 
-def prepare_mesh_cfg(trb_file, *cfg, output_dir='to_run'):
+def prepare_mesh_cfg(trb_file, *cfg, output_dir="to_run"):
 
     DIR = os.getcwd()
 
@@ -119,28 +130,33 @@ def prepare_mesh_cfg(trb_file, *cfg, output_dir='to_run'):
 
     make_output_folder(output_dir)
 
-    with open(f'{output_dir}/RUN.ME', 'w') as f: f.write('module load fine/17.1\n')
+    with open(f"{output_dir}/RUN.ME", "w") as f:
+        f.write("module load fine/17.1\n")
 
     for config_file in cfg:
-        make_geomTurbo(config_file, output_folder=output_dir, N_sections=100, N_points=100)
+        make_geomTurbo(
+            config_file, output_folder=output_dir, N_sections=100, N_points=100
+        )
         mesh_output_dir = f"{output_dir}/{config_file.split('/')[-1].split('.')[0]}"
         make_output_folder(mesh_output_dir)
         options = {
-            '_CASE_NAME_': config_file.split('/')[-1].split('.')[0],
-            '_TEMPLATE_': trb_file,
-            '_GEOMTURBO_': f"{DIR}/{output_dir}/{config_file.split('/')[-1][:-3]}geomTurbo",
-            '_OUTPUT_DIR_': f'{DIR}/{mesh_output_dir}/'
+            "_CASE_NAME_": config_file.split("/")[-1].split(".")[0],
+            "_TEMPLATE_": trb_file,
+            "_GEOMTURBO_": f"{DIR}/{output_dir}/{config_file.split('/')[-1][:-3]}geomTurbo",
+            "_OUTPUT_DIR_": f"{DIR}/{mesh_output_dir}/",
         }
 
-        script_output_file = f"{output_dir}/ag_script_{config_file.split('/')[-1].split('.')[0]}.py"
+        script_output_file = (
+            f"{output_dir}/ag_script_{config_file.split('/')[-1].split('.')[0]}.py"
+        )
         ms.make_ag_script(options, script_output_file=script_output_file)
 
-
-        with open(f'{output_dir}/RUN.ME', 'a') as f: 
+        with open(f"{output_dir}/RUN.ME", "a") as f:
             f.write(f"igg -autogrid5 -real-batch -script {script_output_file}\n")
 
+
 # TODO finish this
-def prepare_simulation(iec_file, igg_file, output_dir='to_run'):
+def prepare_simulation(iec_file, igg_file, output_dir="to_run"):
 
     DIR = os.getcwd()
 
@@ -150,12 +166,13 @@ def prepare_simulation(iec_file, igg_file, output_dir='to_run'):
     make_output_folder(output_dir)
 
     options = {
-        '_IEC_FILE_': iec_file,
-        '_IGG_FILE_': igg_file,
-        '_OUTPUT_DIR_': f'{DIR}/{output_dir}/'
+        "_IEC_FILE_": iec_file,
+        "_IGG_FILE_": igg_file,
+        "_OUTPUT_DIR_": f"{DIR}/{output_dir}/",
     }
 
     # script_output_file = f"{output_dir}/ag_script_{config_file.split('/')[-1].split('.')[0]}.py"
+
 
 # DEPRECATED FUNCTIONS:
 
