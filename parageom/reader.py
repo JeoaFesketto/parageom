@@ -403,9 +403,8 @@ class Param_3D:
 
     def write_geomTurbo(self, filename="output.geomTurbo", xyz='xyz'):
         
-        if xyz != "xyz":
-            xyz = xyz.replace("x", "0").replace("y", "1").replace("z", "2")
-            xyz = [int(xyz[0]), int(xyz[1]), int(xyz[2])]
+        xyz = xyz.replace("x", "0").replace("y", "1").replace("z", "2")
+        xyz = [int(xyz[0]), int(xyz[1]), int(xyz[2])]
             
         lines = [
             "GEOMETRY TURBO VERSION 5",
