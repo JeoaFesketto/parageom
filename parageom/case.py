@@ -24,11 +24,11 @@ class Case:
     work_dir : string
         Relative path of the directory from wich to take inputs or, alternatively to be created.
         If the directory already exists and an init.cfg file is inside it, it will be used as the init
-        file where required. 
+        file where required.
         If the directory does not exist, it will be created and the required files will be written inside.
     geomTurbo_file : string
         Path to the .geomTurbo file that contains the geometry from which to make the parablade setions.
-        The .geomTurbo must be a sectioned one ie. created in Autogrid directly by outputting the geometry of the 
+        The .geomTurbo must be a sectioned one ie. created in Autogrid directly by outputting the geometry of the
         rotor.
 
     Returns
@@ -51,7 +51,7 @@ class Case:
         max_iter_section_number_optim:
                             number of retries allowed to ensure the right number of sections will be taken. Check the
                             `match_blade` method for more on how this is used. Default: 1000
-        scale_factor :      set the scale factor to that of the .geomTurbo file. eg: 1e-3 for mm. 
+        scale_factor :      set the scale factor to that of the .geomTurbo file. eg: 1e-3 for mm.
                             Default: 1e-3
         xyz :               coordinates reordering for the optimization process if necessary. eg: 'zyx', 'xzy', etc...
                             Default: 'xyz'
@@ -65,17 +65,17 @@ class Case:
                             clouds before optimization is stopped. Default: 0.1
         optim_uv_method :   method to be used for uv optimization. Check `scipy.optimize.minimize` documentation.
                             Default: 'L-BFGS-B'
-        optim_dv_method :   method to be used for design variables optimization. Check `scipy.optimize.minimize` 
+        optim_dv_method :   method to be used for design variables optimization. Check `scipy.optimize.minimize`
                             documentation. Default: 'SLSQP'
         optim_max_retries_slsqp:
-                            number of times the optimization is allowed to retry after exiting due to code 4: 
+                            number of times the optimization is allowed to retry after exiting due to code 4:
                             incompatible inequality constraints, when running slsqp. Default: 1
         transfer_position : automatically set the position of the leading and trailing edges of in the cfg file based
                             on the coordinates from the .geomTurbo file. This will also adapt the stagger angle to
                             match the trailing edge y coordinate. Default: True
         fatten :            fatten the blade profile in the cfg file when initialising for a section. Turn this on in
                             case the optimization yields bad results. Default: False
-    
+
     """
 
     DIR = os.getcwd()
@@ -325,9 +325,7 @@ class Case:
 
     def match_blade(self, init_config_file=None, N_sections=10):
 
-        """
-         
-        """
+        """ """
 
         if init_config_file is None:
             if self.init_config_file is not None:
@@ -349,22 +347,21 @@ class Case:
             pass
 
         le_points = self.geomTurbo.rotor_points[0, :, 0]
-        
 
         d_min = 100 / (N_sections - 1)
         sections = _le_lin_sampler(le_points, d_min)
-        n_iter_n_sections=self.max_iter_section_number_optim
-        
-        while sections.shape[0] != N_sections and n_iter_n_sections>0:
+        n_iter_n_sections = self.max_iter_section_number_optim
+
+        while sections.shape[0] != N_sections and n_iter_n_sections > 0:
             if sections.shape[0] > N_sections:
-                d_min += d_min*0.1
+                d_min += d_min * 0.1
                 sections = _le_lin_sampler(le_points, d_min)
                 print(sections.shape)
             else:
-                d_min -= d_min*0.1
+                d_min -= d_min * 0.1
                 sections = _le_lin_sampler(le_points, d_min)
                 print(sections.shape)
-            n_iter_n_sections-=1
+            n_iter_n_sections -= 1
 
         json.dump(
             {"geomTurbo_section_indeces": list(np.asarray(sections, dtype=float))},
