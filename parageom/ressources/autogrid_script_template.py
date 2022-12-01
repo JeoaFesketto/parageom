@@ -1,6 +1,6 @@
 output_dir = '_OUTPUT_DIR_'
 case_name =	'_CASE_NAME_'
-row_number = '_ROW_NUMBER_'
+row_number = _ROW_NUMBER_
 
 def log(msg):
 	f=open(output_dir+'/'+'script.log', 'a')

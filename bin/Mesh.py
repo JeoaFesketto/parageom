@@ -34,7 +34,7 @@ parser.add_argument(
     "--row_number",
     help="Row number of the blade to be modified. Starts at 1 (that\'s how autogrid works, not my choice).",
     type=int,
-    default=1,
+    default='1',
 )
 parser.add_argument(
     "-m",
