@@ -213,6 +213,13 @@ class Case:
             raise
 
         IN = cfg.ConfigPasser(f"{self.work_dir}/init.cfg")
+        
+        #TODO figure this out
+        if self.xyz == 'zyx':
+            IN["OUT_xyz"] = 'yxz'
+        else:
+            IN["OUT_xyz"] = 'xyz'
+        
 
         _initialise_cfg(IN, self.geomTurbo, self.work_dir, 0, True)
         cfg.WriteBladeConfigFile(open(IN["Config_Path"], "w"), IN)

@@ -32,16 +32,28 @@ def make_geomTurbo(
     N_points=362,
     LE_fillet=False,
     TE_fillet=False,
-    xyz="xyz",
+    xyz=None,
 ):
-    DIR = os.getcwd() + "/"
+    DIR = os.getcwd()
 
     t = time.time()
 
     make_output_folder(output_folder, warning=False)
 
-    IN = ConfigPasser(DIR + config_file)
+    IN = ConfigPasser(f"{DIR}/{config_file}")
     DeScale(IN, in_place=True)
+
+    if xyz is not None:
+        IN["OUT_xyz"] = xyz
+    else:
+        try:
+            xyz = IN["OUT_xyz"]
+        except KeyError:
+            raise KeyError(
+                f"Please set a value for OUT_xyz argument in {DIR}/{config_file}"
+            )
+        except:
+            raise
 
     blade = Param_3D(IN, N_sections=N_sections, N_points=N_points)
     blade.output_geomTurbo(
@@ -134,7 +146,7 @@ def prepare_mesh_cfg(trb_file, *cfg, output_dir="to_run", row_number=1):
         f.write("module load fine/17.1\n")
 
     for config_file in cfg:
-        if config_file.endswith('.geomTurbo'):
+        if config_file.endswith(".geomTurbo"):
             sh.copy(config_file, f"{output_dir}/{config_file.split('/')[-1]}")
         else:
             make_geomTurbo(
