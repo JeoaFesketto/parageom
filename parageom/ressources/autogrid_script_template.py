@@ -1,5 +1,6 @@
 output_dir = '_OUTPUT_DIR_'
 case_name =	'_CASE_NAME_'
+row_number = '_ROW_NUMBER_'
 
 def log(msg):
 	f=open(output_dir+'/'+'script.log', 'a')
@@ -22,6 +23,23 @@ def make_hub_fillet(row_i, params):
         for elem in params:
                 getattr(row(row_i).blade(1).get_hub_fillet(), elem[0].replace('get', 'set'))(elem[1])
         log('new hub fillet created')
+
+def get_values_shroud_fillet(row_i):
+        m = []
+        shroud_fillet = row(row_i).blade(1).get_shroud_fillet()
+        if shroud_fillet != 0:
+                for fn in dir(shroud_fillet):
+                        if callable(getattr(shroud_fillet, fn)):
+                                if fn.startswith('get') and fn != 'get_defined_shape':
+                                        m.append([fn, getattr(shroud_fillet, fn)()])
+                return m
+
+def make_shroud_fillet(row_i, params):
+        row(row_i).blade(1).get_shroud_fillet().delete()
+        row(row_i).add_shroud_fillet()
+        for elem in params:
+                getattr(row(row_i).blade(1).get_shroud_fillet(), elem[0].replace('get', 'set'))(elem[1])
+        log('new shroud fillet created')
 
 def get_values_shroud_gap(row_i):
         m = []
@@ -59,12 +77,14 @@ log('opened project')
 
 a5_save_project(output_dir+'/'+case_name+'.trb')
 
-m = get_values_hub_fillet(1)
+m = get_values_hub_fillet(row_number)
+n = get_values_shroud_fillet(row_number)
 
-row(1).load_geometry('_GEOMTURBO_')
+row(row_number).load_geometry('_GEOMTURBO_')
 log('replaced geometry')
 
-make_hub_fillet(1, m)
+make_hub_fillet(row_number, m)
+make_shroud_fillet(row_number, n)
 
 log('saving project')
 a5_save_project(output_dir+'/'+case_name+'.trb')

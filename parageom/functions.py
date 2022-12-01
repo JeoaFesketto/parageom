@@ -121,7 +121,7 @@ def _le_section_getter(le_points, span_percentage):
     return i - 1
 
 
-def prepare_mesh_cfg(trb_file, *cfg, output_dir="to_run"):
+def prepare_mesh_cfg(trb_file, *cfg, output_dir="to_run", row_number=1):
 
     DIR = os.getcwd()
 
@@ -147,6 +147,7 @@ def prepare_mesh_cfg(trb_file, *cfg, output_dir="to_run"):
             "_TEMPLATE_": trb_file,
             "_GEOMTURBO_": f"{DIR}/{output_dir}/{config_file.split('/')[-1][:-3]}geomTurbo",
             "_OUTPUT_DIR_": f"{DIR}/{mesh_output_dir}/",
+            "_ROW_NUMBER_": row_number,
         }
 
         script_output_file = (

@@ -30,6 +30,13 @@ parser.add_argument(
     default="to_run",
 )
 parser.add_argument(
+    "-r",
+    "--row_number",
+    help="Row number of the blade to be modified. Starts at 1 (that\'s how autogrid works, not my choice).",
+    type=int,
+    default=1,
+)
+parser.add_argument(
     "-m",
     "--mesh",
     help="use this flag to mesh the geometries straight away once the scripts are created.",
@@ -40,7 +47,7 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-prepare_mesh_cfg(args.trb_file, *args.config_file, output_dir=args.output_folder)
+prepare_mesh_cfg(args.trb_file, *args.config_file, output_dir=args.output_folder, row_number=args.row_number)
 
 if args.mesh:
     os.system(f". {args.output_folder}/RUN.ME")
