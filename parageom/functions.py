@@ -134,9 +134,12 @@ def prepare_mesh_cfg(trb_file, *cfg, output_dir="to_run"):
         f.write("module load fine/17.1\n")
 
     for config_file in cfg:
-        make_geomTurbo(
-            config_file, output_folder=output_dir, N_sections=100, N_points=100
-        )
+        if config_file.endswith('.geomTurbo'):
+            sh.copy(config_file, f"{output_dir}/{config_file.split('/')[-1]}")
+        else:
+            make_geomTurbo(
+                config_file, output_folder=output_dir, N_sections=100, N_points=100
+            )
         mesh_output_dir = f"{output_dir}/{config_file.split('/')[-1].split('.')[0]}"
         make_output_folder(mesh_output_dir)
         options = {
