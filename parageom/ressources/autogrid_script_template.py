@@ -102,10 +102,10 @@ log('opened project')
 
 a5_save_project(output_dir+'/'+case_name+'.trb')
 
-m = row(row_i).blade(1).get_hub_fillet()
-n = row(row_i).blade(1).get_shroud_fillet()
-g = row(row_i).blade(1).get_hub_gap()
-p = row(row_i).blade(1).get_shroud_gap()
+m = row(row_number).blade(1).get_hub_fillet()
+n = row(row_number).blade(1).get_shroud_fillet()
+g = row(row_number).blade(1).get_hub_gap()
+p = row(row_number).blade(1).get_shroud_gap()
 
 if m != 0:
 	m = get_values_hub_fillet(row_number)
