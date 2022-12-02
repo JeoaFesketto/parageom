@@ -157,7 +157,7 @@ def prepare_mesh_cfg(trb_file, *cfg, output_dir="to_run", row_number=1):
         options = {
             "_CASE_NAME_": config_file.split("/")[-1].split(".")[0],
             "_TEMPLATE_": trb_file,
-            "_GEOMTURBO_": f"{DIR}/{output_dir}/{config_file.split('/')[-1][:-3]}geomTurbo",
+            "_GEOMTURBO_": f"{DIR}/{output_dir}/{config_file.split('/')[-1].split('.')[0]}.geomTurbo",
             "_OUTPUT_DIR_": f"{DIR}/{mesh_output_dir}/",
             "_ROW_NUMBER_": str(row_number),
         }
