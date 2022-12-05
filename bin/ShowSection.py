@@ -28,11 +28,27 @@ parser.add_argument(
     action="count",
     default=0,
 )
+parser.add_argument(
+    "-LE",
+    "--LE_fillet",
+    help="Flag to fillet or not the leading edge",
+    action="count",
+    default=0,
+)
+parser.add_argument(
+    "-TE",
+    "--TE_fillet",
+    help="Flag to fillet or not the trailing edge",
+    action="count",
+    default=0,
+)
 
 args = parser.parse_args()
 
 show_section(
     *args.geomTurbo_files,
     span_percentage=args.span_percentage,
-    _3Dimensional=bool(args._3Dimensional)
+    _3Dimensional=bool(args._3Dimensional),
+    LE_fillet=bool(args.LE_fillet),
+    TE_fillet=bool(args.TE_fillet),
 )

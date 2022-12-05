@@ -67,7 +67,7 @@ def make_geomTurbo(
     )
 
 
-def show_section(*geomTurbo_files, span_percentage=0, _3Dimensional=False):
+def show_section(*geomTurbo_files, span_percentage=0, _3Dimensional=False, LE_fillet=False, TE_fillet=False):
 
     # TODO implement 2D plotting
     t = time.time()
@@ -81,6 +81,8 @@ def show_section(*geomTurbo_files, span_percentage=0, _3Dimensional=False):
             make_geomTurbo(
                 file,
                 output_folder="tmp_geomturbo",
+                LE_fillet=bool(LE_fillet),
+                TE_fillet=bool(TE_fillet),
             )
             geomTurbo = GeomTurbo(
                 f"tmp_geomturbo/{file.split('/')[-1].replace('.cfg', '.geomTurbo')}",
