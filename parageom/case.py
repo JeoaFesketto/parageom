@@ -213,6 +213,8 @@ class Case:
             raise
 
         IN = cfg.ConfigPasser(f"{self.work_dir}/init.cfg")
+
+        IN["N_BLADES"] = self.geomTurbo.n_blades
         
         #TODO figure this out
         if self.xyz == 'zyx':
