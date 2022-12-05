@@ -16,6 +16,7 @@ class GeomTurbo:
         self.surfaces = None
         self.curves = None
         self.rotor_edges = None
+        self.n_blades = None
 
         if init == "unsectioned":
             self.read_unsectioned_turbo(self.file_path)
@@ -111,6 +112,7 @@ class GeomTurbo:
 
         N_sections = int("".join(raw_content).split("\n")[7])
         N_points = int("".join(raw_content).split("\n")[10])
+        self.n_blades = int("".join(raw_content).split("\n")[1].split(" ")[-1])
 
         content = "".join(raw_content).replace(
             f"pressure\nSECTIONAL\n{N_sections}\n", ""
@@ -188,18 +190,18 @@ class Param_3D:
             with the suction and pressure side respectively on axis 0.
         """
 
-        blade = pb.Blade3D(file, UV=UV)
-        blade.make_blade()
+        self.blade = pb.Blade3D(file, UV=UV)
+        self.blade.make_blade()
 
         u = np.linspace(0, 1, N_points)
         V = np.linspace(0, 1, N_sections)
 
-        self.N_blades = blade.IN["N_BLADES"]
+        self.N_blades = self.blade.IN["N_BLADES"]
 
         self.N_sections = N_sections
         self.N_points = N_points
         self.blade_coordinates = np.array(
-            list(map(lambda v: blade.get_section_coordinates(u, v).T, V))
+            list(map(lambda v: self.blade.get_section_coordinates(u, v).T, V))
         )
         # ^ this does this:
         # self.section_coordinates = []
@@ -210,7 +212,11 @@ class Param_3D:
         self.split_coordinates = None
 
     def output_geomTurbo(
-        self, filename="output.geomTurbo", LE_fillet=False, TE_fillet=True, xyz='xyz',
+        self,
+        filename="output.geomTurbo",
+        LE_fillet=False,
+        TE_fillet=True,
+        xyz="xyz",
     ):
         """This function outputs a geomTurbo file of the blade ready to be read and used
         in autogrid.
@@ -242,13 +248,21 @@ class Param_3D:
         self.split_coordinates = tmp
 
         if LE_fillet:
-            self.split_coordinates = self._LE_fillet(self.split_coordinates)
+            self.split_coordinates = self._LE_fillet(
+                self.split_coordinates,
+                cutoff_percentage=self.blade.IN["LE_FILLET_min_width"],
+                min_angle=self.blade.IN["LE_FILLET_min_angle"],
+            )
         if TE_fillet:
-            self.split_coordinates = self._TE_fillet(self.split_coordinates)
+            self.split_coordinates = self._TE_fillet(
+                self.split_coordinates,
+                cutoff_percentage=self.blade.IN["TE_FILLET_min_width"],
+                min_angle=self.blade.IN["TE_FILLET_min_angle"],
+            )
 
         self.write_geomTurbo(filename, xyz=xyz)
 
-    def _LE_fillet(self, point_cloud, N_le=80, min_width=0.8, min_angle=np.deg2rad(15)):
+    def _LE_fillet(self, point_cloud, N_le=80, cutoff_percentage=0.8, min_angle=np.deg2rad(15)):
         """
         Sub-function that rounds the leading edge based on a couple parameters.
         The defaults seem to work quite well.
@@ -261,7 +275,7 @@ class Param_3D:
         p1 and the leading edge point.
 
         min_angle is the threshold before which the leading edge is moved in to shorten the blade
-        and reduce the angle.
+        and increase the angle.
         min_angle should be input in radians.
 
         """
@@ -270,11 +284,18 @@ class Param_3D:
 
         tmp = point_cloud
         final_array = np.zeros((tmp.shape[0], 2, tmp.shape[2] + N_le - 1, 3))
+        
+        # get approx length of camberline of first section
+        i, camberline_length = 1, 0
+        while tmp.shape[2] > i:
+            camberline_length += _dist(_centre(*tmp[0, :, i]), _centre(*tmp[0, :, (i-1)]))
+            i += 1
 
         for k, section in enumerate(tmp):
+            le = section[0, 0]
 
             i = 1
-            while _dist(*section[:, i]) < min_width:
+            while _dist(le, _centre(*section[:, i]))/camberline_length < cutoff_percentage:
                 i += 1
                 elem = section[:, i]
 
@@ -327,7 +348,7 @@ class Param_3D:
         self.N_points += 2 * (N_le - 1)
         return final_array
 
-    def _TE_fillet(self, point_cloud, N_te=80, min_width=0.5, min_angle=np.deg2rad(6)):
+    def _TE_fillet(self, point_cloud, N_te=80, cutoff_percentage=0.5, min_angle=np.deg2rad(6)):
         """
         Sub-function that rounds the trailing edge based on a couple parameters.
         The defaults seem to work quite well.
@@ -348,10 +369,17 @@ class Param_3D:
         tmp = point_cloud
         final_array = np.zeros((tmp.shape[0], 2, tmp.shape[2] + N_te, 3))
 
+        # get approx length of camberline of first section
+        i, camberline_length = 1, 0
+        while tmp.shape[2] > i:
+            camberline_length += _dist(_centre(*tmp[0, :, i]), _centre(*tmp[0, :, (i-1)]))
+            i += 1
+
         for k, section in enumerate(tmp):
+            te = section[0, -1]
 
             i = 1
-            while _dist(*section[:, -i]) < min_width:
+            while _dist(te, _centre(*section[:, -i]))/camberline_length < cutoff_percentage:
                 i += 1
                 elem = section[:, -i]
 
@@ -360,7 +388,6 @@ class Param_3D:
             suction_curve.degree = 2
             pressure_curve.degree = 2
 
-            te = section[0, -1]
             tangent_vectors = section[:, -i] - section[:, -i - 1]
             normal_vector = section[0, -i] - section[1, -i]
             ce = section[1, -i] + 1 / 2 * normal_vector
@@ -401,11 +428,11 @@ class Param_3D:
         self.N_points += 2 * N_te
         return final_array
 
-    def write_geomTurbo(self, filename="output.geomTurbo", xyz='xyz'):
-        
+    def write_geomTurbo(self, filename="output.geomTurbo", xyz="xyz"):
+
         xyz = xyz.replace("x", "0").replace("y", "1").replace("z", "2")
         xyz = [int(xyz[0]), int(xyz[1]), int(xyz[2])]
-            
+
         lines = [
             "GEOMETRY TURBO VERSION 5",
             f"number_of_blades {int(self.N_blades[0])}",
