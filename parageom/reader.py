@@ -250,13 +250,13 @@ class Param_3D:
         if LE_fillet:
             self.split_coordinates = self._LE_fillet(
                 self.split_coordinates,
-                cutoff_percentage=self.blade.IN["LE_FILLET_min_width"],
+                cutoff_percentage=self.blade.IN["LE_FILLET_cutoff_percentage"],
                 min_angle=self.blade.IN["LE_FILLET_min_angle"],
             )
         if TE_fillet:
             self.split_coordinates = self._TE_fillet(
                 self.split_coordinates,
-                cutoff_percentage=self.blade.IN["TE_FILLET_min_width"],
+                cutoff_percentage=self.blade.IN["TE_FILLET_cutoff_percentage"],
                 min_angle=self.blade.IN["TE_FILLET_min_angle"],
             )
 
