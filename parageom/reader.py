@@ -262,7 +262,7 @@ class Param_3D:
 
         self.write_geomTurbo(filename, xyz=xyz)
 
-    def _LE_fillet(self, point_cloud, N_le=80, cutoff_percentage=0.8, min_angle=np.deg2rad(15)):
+    def _LE_fillet(self, point_cloud, N_le=30, cutoff_percentage=0.08, min_angle=15):
         """
         Sub-function that rounds the leading edge based on a couple parameters.
         The defaults seem to work quite well.
@@ -276,12 +276,12 @@ class Param_3D:
 
         min_angle is the threshold before which the leading edge is moved in to shorten the blade
         and increase the angle.
-        min_angle should be input in radians.
+        min_angle should be input in degrees.
 
         """
         # NOTE there is a slight problem with the number of points.
         # the array is expanded by N_le-1 points actually...
-
+        min_angle = np.deg2rad(min_angle)
         tmp = point_cloud
         final_array = np.zeros((tmp.shape[0], 2, tmp.shape[2] + N_le - 1, 3))
         
@@ -348,7 +348,7 @@ class Param_3D:
         self.N_points += 2 * (N_le - 1)
         return final_array
 
-    def _TE_fillet(self, point_cloud, N_te=80, cutoff_percentage=0.5, min_angle=np.deg2rad(6)):
+    def _TE_fillet(self, point_cloud, N_te=30, cutoff_percentage=0.05, min_angle=6):
         """
         Sub-function that rounds the trailing edge based on a couple parameters.
         The defaults seem to work quite well.
@@ -362,10 +362,11 @@ class Param_3D:
 
         min_angle is the threshold before which the trailing edge is moved in to shorten the blade
         and reduce the angle.
-        min_angle should be input in radians.
+        min_angle should be input in degrees.
 
         """
 
+        min_angle = np.deg2rad(min_angle)
         tmp = point_cloud
         final_array = np.zeros((tmp.shape[0], 2, tmp.shape[2] + N_te, 3))
 
