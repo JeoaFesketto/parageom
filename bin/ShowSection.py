@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import argparse
 
 from parageom.common import print_parageom
@@ -52,3 +53,8 @@ show_section(
     LE_fillet=bool(args.LE_fillet),
     TE_fillet=bool(args.TE_fillet),
 )
+
+for file in args.geomTurbo_files:
+    if file.endswith('.cfg'):
+        os.system(f"rm -rf tmp_geomturbo")
+        continue
