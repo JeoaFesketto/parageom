@@ -193,7 +193,11 @@ class Param_3D:
         self.blade = pb.Blade3D(file, UV=UV)
         self.blade.make_blade()
 
-        u = np.linspace(0, 1, N_points)
+        tmp1 = np.geomspace(1e-2, 0.5, N_points//4)-1e-2
+        tmp2 = np.flip(np.ones(tmp1.shape)-tmp1)
+        u = np.hstack((tmp1, tmp2))*0.5
+        u = np.hstack((u, np.flip(np.ones(u.shape)-u)))
+        # u4 = np.linspace(0, 1, N_points)
         V = np.linspace(0, 1, N_sections)
 
         self.N_blades = self.blade.IN["N_BLADES"]
