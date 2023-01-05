@@ -10,7 +10,9 @@ print_parageom()
 
 # ARGUMENT DEFINITION
 
-parser = argparse.ArgumentParser(description="Prepare files to be meshed and optionally mesh them in the process.")
+parser = argparse.ArgumentParser(
+    description="Prepare files to be meshed and optionally mesh them in the process."
+)
 parser.add_argument(
     "trb_file",
     help="Relative path to trb file to be used as a template to mesh the configuration file.",
@@ -32,9 +34,9 @@ parser.add_argument(
 parser.add_argument(
     "-r",
     "--row_number",
-    help="Row number of the blade to be modified. Starts at 1 (that\'s how autogrid works, not my choice).",
+    help="Row number of the blade to be modified. Starts at 1 (that's how autogrid works, not my choice).",
     type=int,
-    default='1',
+    default="1",
 )
 parser.add_argument(
     "-m",
@@ -47,12 +49,17 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-prepare_mesh_cfg(args.trb_file, *args.config_file, output_dir=args.output_folder, row_number=args.row_number)
+prepare_mesh_cfg(
+    args.trb_file,
+    *args.config_file,
+    output_dir=args.output_folder,
+    row_number=args.row_number,
+)
 
 if args.mesh:
     os.system(f". {args.output_folder}/RUN.ME")
 else:
     print(
-        "\n\nPreparation of scripts done. Run `RUN.ME` from here when you are ready to mesh the geometries." 
+        "\n\nPreparation of scripts done. Run `RUN.ME` from here when you are ready to mesh the geometries."
         f"\nUse command `. {args.output_folder}/RUN.ME`"
     )
