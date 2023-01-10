@@ -22,9 +22,9 @@ parser.add_argument(
     nargs="+",
 )
 parser.add_argument(
-    "-r",
-    "--refine3D",
-    help="Flag to run 3D matching afterwards. It might yield better results.",
+    "-a",
+    "--auto_sbatch",
+    help="Sbatch all the created job files automatically.",
     action="count",
     default=0,
 )
@@ -47,6 +47,8 @@ def recursive_get_files(element):
 with open(f'{init_f_path}/job', 'r') as f:
     data = f.read()
 
+created = []
+
 for folder in args.folders:
     tmp_results = recursive_get_files(folder)
     for run_file in tmp_results:
@@ -55,6 +57,8 @@ for folder in args.folders:
         output_directory = f"{output_directory}/.."
         with open(f'{output_directory}/job_{_CASENAME_}', 'w') as f:
             f.write(data.replace('_CASENAME_', _CASENAME_))
+        created.append(f'{output_directory}/job_{_CASENAME_}')
         
-
-    
+if args.auto_sbatch:
+    for file in created:
+        os.system(f'sbatch {file}')
