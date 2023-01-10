@@ -28,6 +28,13 @@ parser.add_argument(
     action="count",
     default=0,
 )
+parser.add_argument(
+    "-o",
+    "--overwrite",
+    help="overwrite pre-existing job files",
+    action="count",
+    default=0,
+)
 
 args = parser.parse_args()
 
@@ -55,9 +62,10 @@ for folder in args.folders:
         _CASENAME_ = run_file.split('/')[-1][:-4]
         output_directory = '/'.join(run_file.split('/')[:-1])
         output_directory = f"{output_directory}/.."
-        with open(f'{output_directory}/job_{_CASENAME_}', 'w') as f:
-            f.write(data.replace('_CASENAME_', _CASENAME_))
-        created.append(f'{output_directory}/job_{_CASENAME_}')
+        if not os.path.exists(f'{output_directory}/job_{_CASENAME_}') or args.overwrite:
+            with open(f'{output_directory}/job_{_CASENAME_}', 'w') as f:
+                f.write(data.replace('_CASENAME_', _CASENAME_))
+            created.append(f'{output_directory}/job_{_CASENAME_}')
         
 if args.auto_sbatch:
     for file in created:
