@@ -1,0 +1,39 @@
+#!/bin/bash
+#SBATCH --nodes=1                   #### Nb de noeuds
+#SBATCH --ntasks=24                 #### Nb de taches
+#SBATCH --ntasks-per-node=24        #### Nb de coeurs/noeuds ici 24
+#SBATCH --threads-per-core=1
+#SBATCH --time=24:00:00             #### temps demandé maximum 
+#SBATCH --begin=now                 #### calcul commmence au plus tot 
+#SBATCH --mail-user=jean.fesquet@isae-supaero.fr #### votre mail
+#SBATCH --mail-type=START,FAIL,END        #### mail quand c'est fini ou erreur
+#SBATCH --job-name=_CASENAME_            #### le nom de votre calcul
+#SBATCH -o %j.out   #### sortie standard STDOUT
+#SBATCH -e %j.err   #### sortie erreur STDERR
+#SBATCH --partition=short       #### la partition
+
+########## MODULES ##########
+
+module purge
+module load fine/14.2
+module list
+
+########## CASE ##########
+CASENAME=_CASENAME_
+W_DIR=${CASENAME}
+
+RUN_FILE=$W_DIR/${CASENAME}.run
+STEERING_FILE=$W_DIR/${CASENAME}.steering
+
+########## RUNNING ########
+
+nprocs=$SLURM_NTASKS
+nnodes=$SLURM_NNODES
+njobcpunode=$SLURM_JOB_CPUS_PER_NODE
+
+echo "NofNodes $nnodes NofTaskPerCpu $njobcpunode NofCpus $nprocs"
+#ldd ${FINE_BIN}
+mpirun -np $nprocs ${BIN} ${RUN_FILE} ${STEERING_FILE}> out_${CASENAME}.log 2>&1
+
+
+

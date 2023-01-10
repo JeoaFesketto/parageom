@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 import os
-import errno
 
 import argparse
-import json
 import shutil as sh
 
 from parageom.common import print_parageom
-from parageom.case import Case
 
-import parablade.init_files.path as pb_path
+import parageom.ressources.path as pg_path
+init_f_path = os.path.dirname(pg_path.__file__)
 
 print_parageom()
 
@@ -44,6 +42,19 @@ def recursive_get_files(element):
                 results.append(path)
     return results
 
+
+
+with open(f'{init_f_path}/job', 'r') as f:
+    data = f.read()
+
 for folder in args.folders:
     tmp_results = recursive_get_files(folder)
-    print(tmp_results)
+    for run_file in tmp_results:
+        _CASENAME_ = run_file.split('/')[-1][:-4]
+        output_directory = '/'.join(run_file.split('/')[:-1])
+        output_directory = f"{output_directory}/.."
+        with open(f'{output_directory}/{_CASENAME_}', 'w') as f:
+            f.write(data.replace('_CASENAME_', _CASENAME_))
+        
+
+    
