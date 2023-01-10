@@ -33,14 +33,15 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-def recursive_get_files(folder):
+def recursive_get_files(element):
     results = []
-    for file in os.listdir(folder):
-        path = f'{folder}/{file}'
-        if os.path.isdir(path):
-            results += recursive_get_files(path)
-        elif os.path.isfile(path) and path.endswith('.run'):
-            results.append(path)
+    if os.path.isdir(element):
+        for file in os.listdir(element):
+            path = f'{element}/{file}'
+            if os.path.isdir(path):
+                results += recursive_get_files(path)
+            elif os.path.isfile(path) and path.endswith('.run'):
+                results.append(path)
     return results
 
 for folder in args.folders:
