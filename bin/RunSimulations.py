@@ -53,7 +53,7 @@ for folder in args.folders:
         _CASENAME_ = run_file.split('/')[-1][:-4]
         output_directory = '/'.join(run_file.split('/')[:-1])
         output_directory = f"{output_directory}/.."
-        with open(f'{output_directory}/{_CASENAME_}', 'w') as f:
+        with open(f'{output_directory}/job_{_CASENAME_}', 'w') as f:
             f.write(data.replace('_CASENAME_', _CASENAME_))
         
 
