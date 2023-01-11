@@ -32,4 +32,5 @@ with open(args.csv_file, 'r') as f:
 
 computations = [tuple(map(float, computation.split(','))) for computation in data.split('\n') if computation]
 
+os.system('module load fine')
 make_computations(args.iec_file, computations)
