@@ -1,14 +1,14 @@
 def log(msg):
-	f=open(_LOG_FILE_, 'a')
+	f=open('_LOG_FILE_', 'a')
 	print >> f, msg
 	f.close()
 
-f=open(_LOG_FILE_, 'w')
+f=open('_LOG_FILE_', 'w')
 print >> f, 'starting script'
 f.close()
 
 log('loading project file')
-FT.open_project(_PROJECT_FILE_)
+FT.open_project('_PROJECT_FILE_')
 log('project loaded')
 
 FT.set_active_computations([0])
