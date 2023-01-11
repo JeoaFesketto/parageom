@@ -185,7 +185,9 @@ def make_computations(iec_file, computations_list):
     }
     script_output_file = f'{output_folder}/fine_script.py'
     ms.make_new_computations_script(options, script_output_file=script_output_file)
-    return script_output_file
+    with open(f'{output_folder}/RUN.ME', 'w') as f: 
+        f.write(f'module load fine\nfine -script {script_output_file} -batch')
+    return f'{output_folder}/RUN.ME'
 
 
 
