@@ -4,6 +4,7 @@ import argparse
 
 from parageom.common import print_parageom
 from parageom.functions import make_computations
+import time
 
 
 print_parageom()
@@ -34,4 +35,5 @@ computations = [tuple(map(float, computation.split(','))) for computation in dat
 
 script = make_computations(args.iec_file, computations)
 os.system('module load fine')
+time.sleep(1)
 os.system(f'fine -script {script} -batch')
