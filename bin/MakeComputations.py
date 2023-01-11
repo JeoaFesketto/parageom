@@ -35,4 +35,4 @@ computations = [tuple(map(float, computation.split(','))) for computation in dat
 
 runme = make_computations(args.iec_file, computations)
 
-os.system(runme)
+os.system(f'. {runme}')
