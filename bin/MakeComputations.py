@@ -32,4 +32,6 @@ with open(args.csv_file, 'r') as f:
 
 computations = [tuple(map(float, computation.split(','))) for computation in data.split('\n') if computation]
 
-make_computations(args.iec_file, computations)
+script = make_computations(args.iec_file, computations)
+os.system('module load fine')
+os.system(f'fine -script {script} -batch')
