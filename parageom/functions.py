@@ -172,6 +172,23 @@ def prepare_mesh_cfg(trb_file, *cfg, output_dir="to_run", row_number=1):
         with open(f"{output_dir}/RUN.ME", "a") as f:
             f.write(f"igg -autogrid5 -real-batch -script {script_output_file}\n")
 
+def make_computations(iec_file, computations_list):
+
+    DIR = os.getcwd()
+    output_folder = 'tmp_fine_script'
+    make_output_folder(output_folder)
+
+    options = {
+        "_PROJECT_FILE_": iec_file,
+        "_COMPUTATIONS_LIST_": str(computations_list),
+        "_LOG_FILE_": f'{DIR}/{output_folder}/fine_script_output.log'
+    }
+    script_output_file = f'{output_folder}/fine_script.py'
+    ms.make_new_computations_script(options, script_output_file=script_output_file)
+    os.system('module load fine')
+    os.system(f'fine -niversion 142 -script {script_output_file} -batch')
+
+
 
 # TODO finish this
 def prepare_simulation(iec_file, igg_file, output_dir="to_run"):
