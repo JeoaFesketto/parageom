@@ -34,6 +34,7 @@ for computation in computations:
 	FT.get_bc_group(FT.get_bc_patch(0, 0, 0)).set_parameter_value("Static_Pressure", pressure) 
 	FT.get_bc_group(FT.get_bc_patch(1, 2, 0)).set_parameter_value("Rotational Speed 1", rpm) 
 	FT.get_bc_group(FT.get_bc_patch(6, 2, 0)).set_parameter_value("Rotational Speed 1", rpm) 
+	FT.get_initial_solution(0).set_mode("file")
 	FT.get_initial_solution(0).set_restart_filename(initialisation)
 	n += 1
 	FT.save_selected_computations()
