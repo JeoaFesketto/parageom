@@ -2,7 +2,8 @@
 import os
 
 import argparse
-import shutil as sh
+from subprocess import check_output
+import os
 
 from parageom.common import print_parageom
 
@@ -27,6 +28,13 @@ parser.add_argument(
     help="Sbatch all the created job files automatically.",
     action="count",
     default=0,
+)
+parser.add_argument(
+    "-c",
+    "--csv_sbatch",
+    help="Sbatch all the created job files automatically from csv file.",
+    type=str,
+    default='comps.csv',
 )
 parser.add_argument(
     "-o",
@@ -66,7 +74,36 @@ for folder in args.folders:
             with open(f'{output_directory}/job_{_CASENAME_}', 'w') as f:
                 f.write(data.replace('_CASENAME_', _CASENAME_))
             created.append(f'{output_directory}/job_{_CASENAME_}')
-        
-if args.auto_sbatch:
+
+if args.csv_sbatch:
+    def _job_id(prefix, rpm, pressure):
+            name = f'{prefix}_{rpm}rpm_{pressure[:2]}kp'
+            raw_string = check_output(f'squeue --name {name}', shell=True)
+            job_id = int(raw_string.split()[8])
+            return job_id
+    def _job_filename(prefix, rpm, pressure):
+            return f'job_{prefix}_{rpm}rpm_{pressure[:2]}kp'
+
+    prefix = os.path.abspath(args.csv_sbatch).split('/')[-2]
+
+    with open(args.csv_sbatch, 'r') as f: data = f.read()
+    computations = [tuple(computation.replace(' ', '').split(',')) for computation in data.split('\n') if computation]
+
+    for i, computation in enumerate(computations):
+            dependent = False
+            if len(computation) == 2:
+                    init = _job_id(prefix, computations[i-1][0], computations[i-1][1])
+                    dependent = True
+            elif len(computation) == 4:
+                    init = _job_id(prefix, computation[2], computation[3])
+                    dependent = True
+            job_name = _job_filename(prefix, computation[0], computation[1])
+            if dependent:
+                    print(f'sbatch -d {init} {job_name}')
+            else:
+                    print(f'sbatch {job_name}')
+
+
+if args.auto_sbatch and not args.csv_sbatch:
     for file in created:
         os.system(f'sbatch {file}')
