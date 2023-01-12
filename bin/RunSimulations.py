@@ -100,8 +100,10 @@ if args.csv_sbatch:
             job_name = _job_filename(prefix, computation[0], computation[1])
             if dependent:
                     print(f'sbatch -d {init} {job_name}')
+                    os.system(f'sbatch -d {init} {job_name}')
             else:
                     print(f'sbatch {job_name}')
+                    os.system(f'sbatch {job_name}')
 
 
 if args.auto_sbatch and not args.csv_sbatch:
