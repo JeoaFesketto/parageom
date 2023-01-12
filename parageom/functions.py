@@ -179,7 +179,7 @@ def make_computations(iec_file, computations_list):
     make_output_folder(output_folder)
 
     def _path_finder(rpm, pressure):
-        return f"{DIR}/{iec_file[:-4]}_{rpm}rpm_{pressure}kp/{iec_file[:-4].split('/')[-1]}_{rpm}rpm_{pressure}kp.run"
+        return f"{DIR}/{iec_file[:-4]}_{rpm}rpm_{pressure//1000}kp/{iec_file[:-4].split('/')[-1]}_{rpm}rpm_{pressure//1000}kp.run"
 
     for i, computation in enumerate(computations_list):
         if len(computation) == 3 and computation[2] == '':

@@ -21,7 +21,7 @@ log(computations)
 n = FT.get_nb_computations()
 
 for computation in computations:
-	rpm, pressure, initialisation = computations
+	rpm, pressure, initialisation = computation
 	rpm = int(rpm)
 	pressure = int(pressure)
 	FT.new_computation() 
