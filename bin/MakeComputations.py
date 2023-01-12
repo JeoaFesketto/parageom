@@ -31,7 +31,7 @@ args = parser.parse_args()
 with open(args.csv_file, 'r') as f:
     data = f.read()
 
-computations = [tuple(map(float, computation.split(','))) for computation in data.split('\n') if computation]
+computations = [tuple(computation.replace(' ', '').split(',')) for computation in data.split('\n') if computation]
 
 runme = make_computations(args.iec_file, computations)
 

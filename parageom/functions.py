@@ -178,6 +178,25 @@ def make_computations(iec_file, computations_list):
     output_folder = 'tmp_fine_script'
     make_output_folder(output_folder)
 
+    def _path_finder(rpm, pressure):
+        return f"{DIR}/{iec_file[:-4]}_{rpm}rpm_{pressure}kp/{iec_file[:-4].split('/')[-1]}_{rpm}rpm_{pressure}kp.run"
+
+    for i, computation in enumerate(computations_list):
+        if len(computation) == 3 and computation[2] == '':
+            computation = (computation[0], computation[1])
+        if len(computation) == 2:
+            computations_list[i] = (
+                computation[0], 
+                computation[1], 
+                _path_finder(*computations_list[i-1][:2])
+            )
+        elif len(computation) == 4:
+            computations_list[i] = (
+                computation[0], 
+                computation[1], 
+                _path_finder(*computation[2:])
+            )
+
     options = {
         "_PROJECT_FILE_": iec_file,
         "_COMPUTATIONS_LIST_": str(computations_list),
